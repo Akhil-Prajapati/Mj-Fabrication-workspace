@@ -1,0 +1,45 @@
+# Java
+/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+/logs/
+/.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Env
+.env
+.env.*
+
+# IDE
+.idea/
+*.iml
+
+# Misc
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+/dist/
+/build/
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.next/
+/frontend/.vercel/
