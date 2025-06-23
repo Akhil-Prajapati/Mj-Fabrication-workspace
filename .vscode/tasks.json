@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "Initialize Spring Boot project with Maven",
+      "command": "mvn archetype:generate -DgroupId=com.mjfabrication -DartifactId=backend -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false",
+      "explanation": "Scaffold a new Maven-based Spring Boot project in the backend folder."
+    }
+  ]
+}
