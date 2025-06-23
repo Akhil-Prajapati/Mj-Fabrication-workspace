@@ -15,4 +15,10 @@ public class CustomerInquiryResponse {
     private String status;
     private String createdAt;
     private String updatedAt;
+    private String customProjectType;
+    private String budgetRange;
+    private String customerName;
+    private String email;
+    private String phone;
+    private String serviceType;
 }

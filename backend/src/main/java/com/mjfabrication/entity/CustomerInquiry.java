@@ -20,7 +20,7 @@ public class CustomerInquiry {
     @Column
     private String email;
 
-    @Column(name = "phone", length = 15)
+    @Column(name = "phone", length = 30)
     private String phone;
 
     @Column(name = "service_type")
@@ -38,4 +38,10 @@ public class CustomerInquiry {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "custom_project_type")
+    private String customProjectType;
+
+    @Column(name = "budget_range")
+    private String budgetRange;
 }

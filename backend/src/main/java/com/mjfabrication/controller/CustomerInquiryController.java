@@ -22,7 +22,7 @@ public class CustomerInquiryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CustomerInquiryResponse> getById(@PathVariable UUID id) {
+    public ResponseEntity<CustomerInquiryResponse> getById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(customerInquiryService.getById(id));
     }
 
@@ -32,12 +32,12 @@ public class CustomerInquiryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CustomerInquiryResponse> update(@PathVariable UUID id, @Valid @RequestBody CustomerInquiryRequest request) {
+    public ResponseEntity<CustomerInquiryResponse> update(@PathVariable("id") UUID id, @Valid @RequestBody CustomerInquiryRequest request) {
         return ResponseEntity.ok(customerInquiryService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         customerInquiryService.delete(id);
         return ResponseEntity.noContent().build();
     }
