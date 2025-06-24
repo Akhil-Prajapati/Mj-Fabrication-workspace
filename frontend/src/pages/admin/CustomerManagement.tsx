@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Search } from "lucide-react";
+import { fetcher } from "@/api/fetcher";
+import { StateDropdown } from "@/components/state";
 
 interface Customer {
   id: number;
@@ -24,6 +26,7 @@ const CustomerManagement = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  // Add stateCode and customerType to formData
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -31,6 +34,7 @@ const CustomerManagement = () => {
     gstNumber: "",
     address: "",
     type: "unregistered" as "registered" | "unregistered",
+    stateCode: "", // new field
   });
 
   useEffect(() => {
@@ -41,35 +45,106 @@ const CustomerManagement = () => {
     setCustomers(savedCustomers);
   }, [navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const newCustomer: Customer = {
-      id: Date.now(),
-      ...formData,
+    const newCustomer = {
+      customerName: formData.name,
+      customerType:
+        formData.type === "registered" ? "REGISTERED" : "UNREGISTERED",
+      phone: formData.phone,
+      email: formData.email,
+      gstNumber: formData.gstNumber,
+      address: formData.address,
+      stateCode: formData.stateCode,
       createdAt: new Date().toISOString(),
     };
-
-    const updatedCustomers = [...customers, newCustomer];
-    setCustomers(updatedCustomers);
-    localStorage.setItem("customers", JSON.stringify(updatedCustomers));
-
-    toast({
-      title: "Customer Added",
-      description: "Customer has been successfully added to the database.",
-    });
-
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      gstNumber: "",
-      address: "",
-      type: "unregistered",
-    });
-    setShowAddForm(false);
+    try {
+      const saved = await fetcher(
+        { path: "/api/v1/customers" },
+        { method: "POST", json: newCustomer }
+      );
+      setCustomers((prev) => [...prev, saved]);
+      toast({
+        title: "Customer Added",
+        description: "Customer has been successfully added to the database.",
+      });
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        gstNumber: "",
+        address: "",
+        type: "unregistered",
+        stateCode: "",
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to add customer.",
+        variant: "destructive",
+      });
+    }
   };
+
+  // Mock GST API fetch function (replace with your real API call)
+  async function fetchGSTDetails(gstNumber: string) {
+    // Example: Replace with your real GST API endpoint and key
+    // const response = await fetch(`https://api.example.com/gst/${gstNumber}`);
+    // if (!response.ok) throw new Error("GST number not found");
+    // return response.json();
+    // Mocked response for demo:
+    if (gstNumber === "") throw new Error("GST number not found");
+    return {
+      primaryContact: {
+        salutation: "Mr.",
+        firstName: "Amit",
+        lastName: "Shah",
+      },
+      companyName: "Amit Engineering Pvt Ltd",
+      contactEmail: "amit@company.com",
+      contactPhone: "9876543210",
+      billingAddress: "123, Industrial Area, Mumbai, MH",
+      shippingAddress: "456, Export Zone, Mumbai, MH",
+      gstNumber: gstNumber,
+      paymentTerms: "Net 30",
+      gstTreatment: "Regular",
+      placeOfSupply: "Maharashtra",
+    };
+  }
+
+  // Handler for GST number blur
+  const handleGSTBlur = async () => {
+    if (!formData.gstNumber) return;
+    try {
+      const data = await fetchGSTDetails(formData.gstNumber);
+      setFormData((prev) => ({
+        ...prev,
+        name:
+          (data.primaryContact?.firstName || "") +
+            (data.primaryContact?.lastName
+              ? " " + data.primaryContact.lastName
+              : "") || prev.name,
+        email: data.contactEmail || prev.email,
+        phone: data.contactPhone || prev.phone,
+        address: data.billingAddress || prev.address,
+        // You can add more fields here as needed
+      }));
+      toast({
+        title: "GST Details Fetched",
+        description: "Company details have been auto-filled.",
+      });
+    } catch {
+      toast({
+        title: "GST Lookup Failed",
+        description: "Could not fetch details for this GST number.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // GST validation regex: 15 chars, uppercase letters and digits only
+  const gstRegex = /^[0-9A-Z]{15}$/;
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -106,10 +181,7 @@ const CustomerManagement = () => {
                     required
                     value={formData.name}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
                   />
                 </div>
@@ -148,20 +220,44 @@ const CustomerManagement = () => {
                 </div>
                 <div>
                   <Label htmlFor="gstNumber">GST Number (Optional)</Label>
-                  <Input
-                    id="gstNumber"
-                    type="text"
-                    value={formData.gstNumber}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        gstNumber: e.target.value,
-                        type: e.target.value ? "registered" : "unregistered",
-                      }))
-                    }
-                    placeholder="Enter GST number if registered"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="gstNumber"
+                      type="text"
+                      value={formData.gstNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        // Only allow alphanumeric and max 15 chars
+                        if (/^[0-9A-Z]*$/.test(value) && value.length <= 15) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            gstNumber: value,
+                            type: value ? "registered" : "unregistered",
+                          }));
+                        }
+                      }}
+                      placeholder="Enter GST number if registered"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGSTBlur}
+                      disabled={!gstRegex.test(formData.gstNumber)}
+                    >
+                      Fetch GST Details
+                    </Button>
+                  </div>
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="stateCode">State *</Label>
+                <StateDropdown
+                  value={formData.stateCode}
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, stateCode: val }))
+                  }
+                  required
+                />
               </div>
 
               <div>
