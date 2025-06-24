@@ -1,31 +1,36 @@
+import { useState } from "react";
+import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
+import { fetcher } from "@/api/fetcher";
 
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
-
-interface AdminLayoutProps {
-  children: React.ReactNode;
-}
-
-const AdminLayout = ({ children }: AdminLayoutProps) => {
+const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminLoggedIn');
-    navigate('/admin');
+  const handleLogout = async () => {
+    try {
+      await fetcher({
+        path: "/api/v1/auth/logout",
+        method: "POST",
+        shouldShowLoader: false,
+        credentials: "include",
+      });
+    } catch (e) {
+      // ignore error
+    }
+    navigate("/admin");
   };
 
   const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: '🏠' },
-    { name: 'Customer Management', path: '/admin/customers', icon: '👥' },
-    { name: 'Inquiry Management', path: '/admin/inquiries', icon: '📝' },
-    { name: 'Inventory Management', path: '/admin/inventory', icon: '📦' },
-    { name: 'Invoice Generation', path: '/admin/invoices', icon: '📄' },
-    { name: 'Company Profile', path: '/admin/company', icon: '🏢' },
-    { name: 'Reports', path: '/admin/reports', icon: '📊' },
+    { name: "Dashboard", path: "/admin/dashboard", icon: "🏠" },
+    { name: "Customer Management", path: "/admin/customers", icon: "👥" },
+    { name: "Inquiry Management", path: "/admin/inquiries", icon: "📝" },
+    { name: "Inventory Management", path: "/admin/inventory", icon: "📦" },
+    { name: "Invoice Generation", path: "/admin/invoices", icon: "📄" },
+    { name: "Company Profile", path: "/admin/company", icon: "🏢" },
+    { name: "Reports", path: "/admin/reports", icon: "📊" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -33,14 +38,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}
+      >
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">MJ</span>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">MJ Fabrication</h2>
+              <h2 className="text-lg font-bold text-gray-900">
+                MJ Fabrication
+              </h2>
               <p className="text-xs text-gray-600">Admin Panel</p>
             </div>
           </div>
@@ -61,8 +72,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               to={item.path}
               className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive(item.path)
-                  ? 'bg-blue-100 text-blue-600'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? "bg-blue-100 text-blue-600"
+                  : "text-gray-700 hover:bg-gray-100"
               }`}
               onClick={() => setSidebarOpen(false)}
             >
@@ -109,7 +120,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
         {/* Content */}
         <main className="p-4 lg:p-6">
-          {children}
+          <Outlet />
         </main>
       </div>
 

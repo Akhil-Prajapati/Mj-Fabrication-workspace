@@ -1,12 +1,10 @@
-
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
-import AdminLayout from '@/components/admin/AdminLayout';
-import InvoiceForm from '@/components/invoices/InvoiceForm';
-import InvoiceList from '@/components/invoices/InvoiceList';
-import InvoicePreview from '@/components/invoices/InvoicePreview';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import InvoiceForm from "@/components/invoices/InvoiceForm";
+import InvoiceList from "@/components/invoices/InvoiceList";
+import InvoicePreview from "@/components/invoices/InvoicePreview";
 
 interface InvoiceData {
   invoiceNumber: string;
@@ -27,7 +25,7 @@ interface Invoice {
   invoiceDate: string;
   customerName: string;
   totalAmount: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  status: "draft" | "sent" | "paid" | "overdue";
   dueDate: string;
   fullData?: InvoiceData; // Store complete invoice data for preview
 }
@@ -36,71 +34,69 @@ const InvoiceGeneration = () => {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewInvoice, setPreviewInvoice] = useState<InvoiceData | null>(null);
+  const [previewInvoice, setPreviewInvoice] = useState<InvoiceData | null>(
+    null
+  );
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   useEffect(() => {
-    if (!localStorage.getItem('adminLoggedIn')) {
-      navigate('/admin');
-    }
-
     // Load saved invoices
-    const savedInvoices = localStorage.getItem('invoices');
+    const savedInvoices = localStorage.getItem("invoices");
     if (savedInvoices) {
       setInvoices(JSON.parse(savedInvoices));
     } else {
       // Sample data with enhanced structure
       const sampleInvoices: Invoice[] = [
         {
-          invoiceNumber: 'INV-001',
-          invoiceDate: '2024-01-15',
-          customerName: 'ABC Construction Ltd',
+          invoiceNumber: "INV-001",
+          invoiceDate: "2024-01-15",
+          customerName: "ABC Construction Ltd",
           totalAmount: 45000,
-          status: 'paid',
-          dueDate: '2024-02-15',
+          status: "paid",
+          dueDate: "2024-02-15",
           fullData: {
-            invoiceNumber: 'INV-001',
-            invoiceDate: '2024-01-15',
-            dueDate: '2024-02-15',
+            invoiceNumber: "INV-001",
+            invoiceDate: "2024-01-15",
+            dueDate: "2024-02-15",
             customer: {
-              customerId: 'CUST-001',
-              companyName: 'ABC Construction Ltd',
-              contactPerson: 'Rajesh Kumar',
-              gstNumber: '29ABCDE1234F1Z5',
-              address: '123 Industrial Area, Sector 15, Gurgaon',
-              state: 'Haryana',
-              stateCode: '06'
+              customerId: "CUST-001",
+              companyName: "ABC Construction Ltd",
+              contactPerson: "Rajesh Kumar",
+              gstNumber: "29ABCDE1234F1Z5",
+              address: "123 Industrial Area, Sector 15, Gurgaon",
+              state: "Haryana",
+              stateCode: "06",
             },
             items: [
               {
-                id: '1',
-                itemName: 'Fabricated Bracket',
-                hsnCode: '73089090',
+                id: "1",
+                itemName: "Fabricated Bracket",
+                hsnCode: "73089090",
                 quantity: 7,
-                unit: 'Pieces',
+                unit: "Pieces",
                 rate: 730,
-                amount: 5110
-              }
+                amount: 5110,
+              },
             ],
             subtotal: 5110,
             sgst: 459.9,
             cgst: 459.9,
             igst: 0,
             totalAmount: 6029.8,
-            notes: 'Thank you for your business!'
-          }
+            notes: "Thank you for your business!",
+          },
         },
         {
-          invoiceNumber: 'INV-002',
-          invoiceDate: '2024-01-20',
-          customerName: 'XYZ Builders Pvt Ltd',
+          invoiceNumber: "INV-002",
+          invoiceDate: "2024-01-20",
+          customerName: "XYZ Builders Pvt Ltd",
           totalAmount: 32000,
-          status: 'sent',
-          dueDate: '2024-02-20'
-        }
+          status: "sent",
+          dueDate: "2024-02-20",
+        },
       ];
       setInvoices(sampleInvoices);
-      localStorage.setItem('invoices', JSON.stringify(sampleInvoices));
+      localStorage.setItem("invoices", JSON.stringify(sampleInvoices));
     }
   }, [navigate]);
 
@@ -108,16 +104,16 @@ const InvoiceGeneration = () => {
     const newInvoice: Invoice = {
       invoiceNumber: invoiceData.invoiceNumber,
       invoiceDate: invoiceData.invoiceDate,
-      customerName: invoiceData.customer?.companyName || 'Unknown Customer',
+      customerName: invoiceData.customer?.companyName || "Unknown Customer",
       totalAmount: invoiceData.totalAmount,
-      status: 'draft',
+      status: "draft",
       dueDate: invoiceData.dueDate,
-      fullData: invoiceData
+      fullData: invoiceData,
     };
 
     const updatedInvoices = [...invoices, newInvoice];
     setInvoices(updatedInvoices);
-    localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+    localStorage.setItem("invoices", JSON.stringify(updatedInvoices));
     setShowForm(false);
 
     toast({
@@ -134,7 +130,7 @@ const InvoiceGeneration = () => {
       toast({
         title: "Preview Not Available",
         description: "Complete invoice data not available for preview.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -160,44 +156,42 @@ const InvoiceGeneration = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Invoice Generation</h1>
-            <p className="text-gray-600 mt-1">
-              Create and manage GST-compliant invoices
-            </p>
-          </div>
-          {!showForm && (
-            <Button onClick={() => setShowForm(true)}>
-              Create New Invoice
-            </Button>
-          )}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Invoice Generation
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Create and manage GST-compliant invoices
+          </p>
         </div>
-
-        {showForm ? (
-          <InvoiceForm
-            onSave={handleSaveInvoice}
-            onCancel={() => setShowForm(false)}
-          />
-        ) : (
-          <InvoiceList
-            invoices={invoices}
-            onView={handleViewInvoice}
-            onDownload={handleDownloadInvoice}
-          />
-        )}
-
-        {showPreview && previewInvoice && (
-          <InvoicePreview
-            invoice={previewInvoice}
-            onClose={() => setShowPreview(false)}
-            onDownload={handleDownloadPDF}
-          />
+        {!showForm && (
+          <Button onClick={() => setShowForm(true)}>Create New Invoice</Button>
         )}
       </div>
-    </AdminLayout>
+
+      {showForm ? (
+        <InvoiceForm
+          onSave={handleSaveInvoice}
+          onCancel={() => setShowForm(false)}
+        />
+      ) : (
+        <InvoiceList
+          invoices={invoices}
+          onView={handleViewInvoice}
+          onDownload={handleDownloadInvoice}
+        />
+      )}
+
+      {showPreview && previewInvoice && (
+        <InvoicePreview
+          invoice={previewInvoice}
+          onClose={() => setShowPreview(false)}
+          onDownload={handleDownloadPDF}
+        />
+      )}
+    </div>
   );
 };
 

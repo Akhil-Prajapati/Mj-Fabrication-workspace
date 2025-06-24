@@ -19,6 +19,8 @@ import InquiryManagement from "./pages/admin/InquiryManagement";
 import Reports from "./pages/admin/Reports";
 import CompanyProfile from "./pages/admin/CompanyProfile";
 import ChatWidget from "./components/ChatWidget";
+import AuthGuard from "@/components/auth/AuthGuard";
+import AdminLayout from "./components/admin/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -30,20 +32,32 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<Index />} />
+          {/* Public routes */}
+          <Route path="/admin" element={<AdminLogin />} />
+          {/* Protected admin routes (all nested under /admin/*) */}
+          <Route
+            path="/admin/*"
+            element={
+              <AuthGuard>
+                <AdminLayout />
+              </AuthGuard>
+            }
+          >
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="invoices" element={<InvoiceGeneration />} />
+            <Route path="customers" element={<CustomerManagement />} />
+            <Route path="inventory" element={<InventoryManagement />} />
+            <Route path="inquiries" element={<InquiryManagement />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="profile" element={<CompanyProfile />} />
+            <Route path="company" element={<CompanyProfile />} />
+          </Route>
+          {/* Other public routes */}
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/" element={<Index />} />
           <Route path="/services" element={<Services />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/invoices" element={<InvoiceGeneration />} />
-          <Route path="/admin/customers" element={<CustomerManagement />} />
-          <Route path="/admin/inventory" element={<InventoryManagement />} />
-          <Route path="/admin/inquiries" element={<InquiryManagement />} />
-          <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/profile" element={<CompanyProfile />} />
-          <Route path="/admin/company" element={<CompanyProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ChatWidget />

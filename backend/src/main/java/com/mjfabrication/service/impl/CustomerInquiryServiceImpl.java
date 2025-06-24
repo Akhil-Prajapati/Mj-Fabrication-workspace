@@ -125,13 +125,45 @@ public class CustomerInquiryServiceImpl implements CustomerInquiryService {
     public CustomerInquiryResponse update(UUID id, CustomerInquiryRequest request) {
         CustomerInquiry inquiry = customerInquiryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("CustomerInquiry not found"));
-        modelMapper.map(request, inquiry);
+        // Only update fields if present in the request (partial update logic)
+        if (request.getCustomerName() != null && !request.getCustomerName().trim().isEmpty()) {
+            inquiry.setCustomerName(request.getCustomerName());
+        }
+        if (request.getContactPerson() != null && !request.getContactPerson().trim().isEmpty()) {
+            inquiry.setCustomerName(request.getContactPerson());
+        }
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            inquiry.setEmail(request.getEmail());
+        }
+        if (request.getContactEmail() != null && !request.getContactEmail().trim().isEmpty()) {
+            inquiry.setEmail(request.getContactEmail());
+        }
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            inquiry.setPhone(request.getPhone());
+        }
+        if (request.getContactPhone() != null && !request.getContactPhone().trim().isEmpty()) {
+            inquiry.setPhone(request.getContactPhone());
+        }
+        if (request.getServiceType() != null && !request.getServiceType().trim().isEmpty()) {
+            inquiry.setServiceType(request.getServiceType());
+        }
+        if (request.getInquiryType() != null && !request.getInquiryType().trim().isEmpty()) {
+            inquiry.setServiceType(request.getInquiryType());
+        }
+        if (request.getCustomProjectType() != null && !request.getCustomProjectType().trim().isEmpty()) {
+            inquiry.setCustomProjectType(request.getCustomProjectType());
+        }
+        if (request.getMessage() != null && !request.getMessage().trim().isEmpty()) {
+            inquiry.setMessage(request.getMessage());
+        }
+        if (request.getBudgetRange() != null && !request.getBudgetRange().trim().isEmpty()) {
+            inquiry.setBudgetRange(request.getBudgetRange());
+        }
         // Explicitly set status to avoid null (enum conversion)
         if (request.getStatus() != null && !request.getStatus().isEmpty()) {
             try {
                 inquiry.setStatus(com.mjfabrication.enums.InquiryStatus.valueOf(request.getStatus().toUpperCase()));
             } catch (IllegalArgumentException e) {
-                // fallback to NEW if status string is invalid
                 inquiry.setStatus(com.mjfabrication.enums.InquiryStatus.NEW);
             }
         } else if (inquiry.getStatus() == null) {

@@ -18,35 +18,20 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const result = await login(credentials.username, credentials.password);
-      if (result && result.accessToken) {
-        // Check if user is admin (backend should return role)
-        if (result.role && result.role === "ADMIN") {
-          localStorage.setItem("token", result.accessToken);
-          localStorage.setItem("adminLoggedIn", "true");
-          toast({
-            title: "Login Successful",
-            description: "Welcome to MJ Fabrication Admin Panel",
-          });
-          navigate("/admin/dashboard");
-        } else {
-          toast({
-            title: "Access Denied",
-            description: "You are not authorized as admin.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        toast({
-          title: "Login Failed",
-          description: result?.error || "Invalid username or password",
-          variant: "destructive",
-        });
-      }
-    } catch (err) {
+      await login(credentials.username, credentials.password);
+      // If no error is thrown, login is successful (cookie is set)
+      toast({
+        title: "Login Successful",
+        description: "Welcome to MJ Fabrication Admin Panel",
+      });
+      navigate("/admin/dashboard");
+    } catch (err: any) {
       toast({
         title: "Login Failed",
-        description: "Server error. Please try again.",
+        description:
+          err?.response?.status === 401
+            ? "Invalid username or password"
+            : "Server error. Please try again.",
         variant: "destructive",
       });
     }
