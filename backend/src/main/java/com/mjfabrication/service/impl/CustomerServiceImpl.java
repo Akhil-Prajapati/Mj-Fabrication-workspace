@@ -1,8 +1,10 @@
 package com.mjfabrication.service.impl;
 
 import com.mjfabrication.entity.Customer;
+import com.mjfabrication.entity.CustomerAddress;
 import com.mjfabrication.payload.request.CustomerRequest;
 import com.mjfabrication.payload.response.CustomerResponse;
+import com.mjfabrication.repository.CustomerAddressRepository;
 import com.mjfabrication.repository.CustomerRepository;
 import com.mjfabrication.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
+    private final CustomerAddressRepository customerAddressRepository;
     private final ModelMapper modelMapper;
 
     @Override
@@ -39,7 +42,26 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = modelMapper.map(request, Customer.class);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setUpdatedAt(LocalDateTime.now());
+        // Save customer first to get ID
         Customer saved = customerRepository.save(customer);
+        // Save addresses if present
+        if (request.getAddresses() != null && !request.getAddresses().isEmpty()) {
+            List<CustomerAddress> addresses = request.getAddresses().stream()
+                .map(addrReq -> {
+                    CustomerAddress addr = new CustomerAddress();
+                    addr.setCustomer(saved);
+                    addr.setAddressLine1(addrReq.getAddressLine1());
+                    addr.setAddressLine2(addrReq.getAddressLine2());
+                    addr.setCity(addrReq.getCity());
+                    addr.setState(addrReq.getState());
+                    addr.setPincode(addrReq.getPincode());
+                    addr.setIsDefault(addrReq.getIsDefault());
+                    addr.setAddressType(addrReq.getAddressType());
+                    return addr;
+                })
+                .collect(Collectors.toList());
+            customerAddressRepository.saveAll(addresses);
+        }
         return modelMapper.map(saved, CustomerResponse.class);
     }
 
