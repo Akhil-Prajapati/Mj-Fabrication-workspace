@@ -51,7 +51,9 @@ interface Customer {
 
 const CustomerManagement = () => {
   const navigate = useNavigate();
-  const setSelectedCustomerId = useUserStore((state) => state.setSelectedCustomerId);
+  const setSelectedCustomerId = useUserStore(
+    (state) => state.setSelectedCustomerId
+  );
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
