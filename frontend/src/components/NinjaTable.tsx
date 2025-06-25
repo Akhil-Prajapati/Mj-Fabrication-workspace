@@ -6,28 +6,9 @@ import {
   useSortBy,
   Column,
 } from "react-table";
-import {
-  Box,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Button,
-  Input,
-  Flex,
-  Select,
-  chakra,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-} from "@chakra-ui/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 export interface NinjaTableProps<T extends object> {
   columns: Column<T>[];
@@ -36,6 +17,7 @@ export interface NinjaTableProps<T extends object> {
   onRowClick?: (row: T) => void;
   globalFilterPlaceholder?: string;
   customFilters?: React.ReactNode;
+  themeColor?: string; // Add themeColor prop
 }
 
 export function NinjaTable<T extends object>({
@@ -45,6 +27,7 @@ export function NinjaTable<T extends object>({
   onRowClick,
   globalFilterPlaceholder = "Search...",
   customFilters,
+  themeColor = "#3182ce", // Default to blue
 }: NinjaTableProps<T>) {
   const {
     getTableProps,
@@ -74,95 +57,100 @@ export function NinjaTable<T extends object>({
   );
 
   return (
-    <Box>
-      <Flex mb={4} align="center" gap={4} flexWrap="wrap">
+    <div className="w-full">
+      <div className="flex mb-4 items-center gap-4 flex-wrap">
         <Input
           placeholder={globalFilterPlaceholder}
           value={state.globalFilter || ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          maxW="300px"
+          className="max-w-xs shadow-none focus:border-blue-600 focus:border-2 box"
+          style={{ borderColor: themeColor, boxShadow: "none" }}
         />
         {customFilters}
-        <Select
-          value={state.pageSize}
-          onChange={(e) => setPageSize(Number(e.target.value))}
-          maxW="120px"
+        {/* <Select
+          value={String(state.pageSize)}
+          onValueChange={(val) => setPageSize(Number(val))}
+          style={{ borderColor: themeColor }}
         >
           {[10, 20, 30, 40, 50].map((size) => (
             <option key={size} value={size}>
               Show {size}
             </option>
           ))}
-        </Select>
-      </Flex>
-      <Table
-        {...getTableProps()}
-        variant="striped"
-        colorScheme="gray"
-        size="md"
-        borderRadius="md"
-        overflow="hidden"
+        </Select> */}
+      </div>
+      <div
+        className="overflow-x-auto rounded-md border"
+        // style={{ borderColor: themeColor }}
       >
-        <Thead bg="gray.100">
-          {headerGroups.map((headerGroup) => (
-            <Tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
-                <Th
-                  {...column.getHeaderProps(column.getSortByToggleProps())}
-                  isNumeric={column.isNumeric}
-                  cursor={column.canSort ? "pointer" : "default"}
-                  _hover={column.canSort ? { bg: "gray.200" } : {}}
-                >
-                  {column.render("Header")}
-                  {column.canSort && (
-                    <chakra.span pl={2} fontSize="sm">
-                      {column.isSorted ? (column.isSortedDesc ? "▼" : "▲") : ""}
-                    </chakra.span>
-                  )}
-                </Th>
-              ))}
-            </Tr>
-          ))}
-        </Thead>
-        <Tbody {...getTableBodyProps()}>
-          {page.map((row) => {
-            prepareRow(row);
-            return (
-              <Tr
-                {...row.getRowProps()}
-                _hover={onRowClick ? { bg: "gray.50", cursor: "pointer" } : {}}
-                onClick={
-                  onRowClick ? () => onRowClick(row.original) : undefined
-                }
-              >
-                {row.cells.map((cell) => (
-                  <Td
-                    {...cell.getCellProps()}
-                    isNumeric={cell.column.isNumeric}
+        <table {...getTableProps()} className="min-w-full bg-white">
+          <thead style={{ background: themeColor + "22" }}>
+            {headerGroups.map((headerGroup) => (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map((column) => (
+                  <th
+                    {...column.getHeaderProps(column.getSortByToggleProps())}
+                    className={`px-4 py-2 text-left font-semibold text-gray-700 select-none ${
+                      column.canSort ? "cursor-pointer hover:bg-gray-200" : ""
+                    }`}
+                    style={{ color: themeColor }}
                   >
-                    {cell.render("Cell")}
-                  </Td>
+                    {column.render("Header")}
+                    {column.canSort && (
+                      <span className="pl-2 text-xs">
+                        {column.isSorted
+                          ? column.isSortedDesc
+                            ? "▼"
+                            : "▲"
+                          : ""}
+                      </span>
+                    )}
+                  </th>
                 ))}
-              </Tr>
-            );
-          })}
-        </Tbody>
-      </Table>
-      <Flex
-        mt={4}
-        justify="space-between"
-        align="center"
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Box>
+              </tr>
+            ))}
+          </thead>
+          <tbody {...getTableBodyProps()}>
+            {page.map((row) => {
+              prepareRow(row);
+              return (
+                <tr
+                  {...row.getRowProps()}
+                  className={
+                    onRowClick
+                      ? `hover:bg-[${themeColor}11] cursor-pointer`
+                      : undefined
+                  }
+                  style={onRowClick ? { transition: "background 0.2s" } : {}}
+                  onClick={
+                    onRowClick ? () => onRowClick(row.original) : undefined
+                  }
+                >
+                  {row.cells.map((cell) => (
+                    <td {...cell.getCellProps()} className="px-4 py-2 border-t">
+                      {cell.render("Cell")}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex mt-4 justify-between items-center flex-wrap gap-2">
+        <div>
           Page {state.pageIndex + 1} of {pageOptions.length}
-        </Box>
-        <Flex gap={2}>
+        </div>
+        <div className="flex gap-2">
           <Button
             onClick={() => gotoPage(0)}
             disabled={!canPreviousPage}
             size="sm"
+            style={{
+              background: themeColor,
+              color: "#fff",
+              borderColor: themeColor,
+            }}
           >
             First
           </Button>
@@ -170,21 +158,40 @@ export function NinjaTable<T extends object>({
             onClick={() => previousPage()}
             disabled={!canPreviousPage}
             size="sm"
+            style={{
+              background: themeColor,
+              color: "#fff",
+              borderColor: themeColor,
+            }}
           >
             Previous
           </Button>
-          <Button onClick={() => nextPage()} disabled={!canNextPage} size="sm">
+          <Button
+            onClick={() => nextPage()}
+            disabled={!canNextPage}
+            size="sm"
+            style={{
+              background: themeColor,
+              color: "#fff",
+              borderColor: themeColor,
+            }}
+          >
             Next
           </Button>
           <Button
             onClick={() => gotoPage(pageCount - 1)}
             disabled={!canNextPage}
             size="sm"
+            style={{
+              background: themeColor,
+              color: "#fff",
+              borderColor: themeColor,
+            }}
           >
             Last
           </Button>
-        </Flex>
-      </Flex>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

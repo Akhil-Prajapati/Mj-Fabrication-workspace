@@ -30,4 +30,7 @@ public class CustomerRequest {
 
     // Add addresses field for saving customer addresses
     private List<CustomerAddressRequest> addresses;
+
+    @NotBlank
+    private String companyName;
 }

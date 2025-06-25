@@ -56,6 +56,7 @@ public class CustomerController {
         request.setCustomerName((String) requestMap.get("customerName"));
         request.setPhone((String) requestMap.get("phone"));
         request.setEmail((String) requestMap.get("email"));
+        request.setCompanyName((String) requestMap.get("companyName"));
         request.setGstNumber((String) requestMap.get("gstNumber"));
         request.setStateCode((String) requestMap.get("stateCode"));
         String customerTypeStr = (String) requestMap.get("customerType");

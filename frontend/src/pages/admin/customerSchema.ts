@@ -1,7 +1,17 @@
 import { z } from "zod";
 
+// Add all backend enum values for customerType
+const customerTypeOptions = [
+  "REGISTERED",
+  "UNREGISTERED",
+  "REGULAR",
+  "PREMIUM",
+  "WHOLESALE",
+  "CORPORATE",
+] as const;
+
 export const customerSchema = z.object({
-  name: z.string().min(2, "Name is required").max(100),
+  customerName: z.string().min(2, "Name is required").max(100),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone is required").max(15, "Phone too long"),
   gstNumber: z
@@ -10,8 +20,8 @@ export const customerSchema = z.object({
     .refine((val) => !val || /^[0-9A-Z]{15}$/.test(val), {
       message: "GST number must be 15 alphanumeric characters",
     }),
-  address: z.string().min(2, "Address is required").max(200),
   type: z.enum(["registered", "unregistered"]),
+  customerType: z.enum(customerTypeOptions), // Add customerType validation
   stateCode: z.string().min(2, "State is required"),
   addresses: z
     .array(
@@ -26,6 +36,7 @@ export const customerSchema = z.object({
       })
     )
     .min(1, "At least one address is required"),
+  companyName: z.string().max(100, "Company name too long").optional(),
 });
 
 export type CustomerFormType = z.infer<typeof customerSchema>;

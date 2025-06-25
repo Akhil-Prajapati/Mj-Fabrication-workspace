@@ -17,4 +17,5 @@ public class CustomerResponse {
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String companyName;
 }

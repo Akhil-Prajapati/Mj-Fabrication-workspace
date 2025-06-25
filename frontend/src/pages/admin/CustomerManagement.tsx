@@ -12,17 +12,16 @@ import { StateDropdown } from "@/components/state";
 import { customerSchema } from "./customerSchema";
 import { z } from "zod";
 import { NinjaTable } from "@/components/NinjaTable";
+import * as React from "react";
 import {
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  Button as ChakraButton,
-} from "@chakra-ui/core";
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { getStates } from "@/api/state";
 
 interface Address {
   addressLine1: string;
@@ -36,12 +35,14 @@ interface Address {
 
 interface Customer {
   id: number | string;
-  name: string;
+  customerName: string;
+  companyName?: string;
   email: string;
   phone: string;
   gstNumber: string;
   address: string;
   type: "registered" | "unregistered";
+  customerType?: "registered" | "unregistered"; // Ensure customerType is present
   createdAt: string;
   stateCode?: string;
   addresses?: Address[];
@@ -57,12 +58,14 @@ const CustomerManagement = () => {
   >("BILLING");
   // Add stateCode and customerType to formData
   const [formData, setFormData] = useState({
-    name: "",
+    customerName: "",
+    companyName: "",
     email: "",
     phone: "",
     gstNumber: "",
     address: "",
     type: "unregistered" as "registered" | "unregistered",
+    customerType: "UNREGISTERED" as CustomerTypeOption,
     stateCode: "", // new field
   });
   const [addressForm, setAddressForm] = useState({
@@ -78,23 +81,45 @@ const CustomerManagement = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
+  const [stateList, setStateList] = useState<
+    { stateCode: string; stateName: string }[]
+  >([]);
+
+  const onOpen = () => setIsOpen(true);
+  const onClose = () => setIsOpen(false);
 
   useEffect(() => {
+    // Fetch state list for code-name mapping
+    getStates().then((data) => {
+      let stateList = data;
+      if (Array.isArray(data)) {
+        stateList = data;
+      } else if (data.states && Array.isArray(data.states)) {
+        stateList = data.states;
+      } else if (data.data && Array.isArray(data.data)) {
+        stateList = data.data;
+      }
+      setStateList(stateList);
+    });
     // Fetch customers from backend
     fetcher({ path: "/api/v1/customers" }, { method: "GET" })
       .then((data: any[]) => {
         const mapped = data.map((saved) => {
+          console.log(saved);
+
           let type: "registered" | "unregistered" = "unregistered";
+          let customerType: "registered" | "unregistered" = "unregistered";
           if (
             saved.customerType?.toLowerCase() === "registered" ||
             saved.type === "registered"
           ) {
             type = "registered";
+            customerType = "registered";
           }
           return {
             id: saved.id || saved.customerId || Date.now() + Math.random(),
-            name: saved.name || saved.customerName || "",
+            customerName: saved.name || saved.customerName || "",
             email: saved.email || "",
             phone: saved.phone || "",
             gstNumber: saved.gstNumber || "",
@@ -103,9 +128,11 @@ const CustomerManagement = () => {
               (saved.addresses && saved.addresses[0]?.addressLine1) ||
               "",
             type,
+            customerType, // Always set customerType
             createdAt: saved.createdAt || new Date().toISOString(),
             stateCode: saved.stateCode || "",
             addresses: saved.addresses || [],
+            companyName: saved.companyName || "", // Map companyName
           };
         });
         setCustomers(mapped);
@@ -116,12 +143,14 @@ const CustomerManagement = () => {
     e.preventDefault();
     // Build the object to validate
     const validateObj = {
-      name: formData.name,
+      customerName: formData.customerName,
+      companyName: formData.companyName ?? "", // Always send as string
       email: formData.email,
       phone: formData.phone,
       gstNumber: formData.gstNumber,
       address: formData.address,
       type: formData.type,
+      customerType: formData.customerType, // Use dropdown value
       stateCode: formData.stateCode,
       addresses: [
         {
@@ -161,7 +190,8 @@ const CustomerManagement = () => {
       // Map backend response to frontend Customer type
       const mappedCustomer: Customer = {
         id: saved.id || saved.customerId || Date.now(),
-        name: saved.name || saved.customerName || "",
+        customerName: saved.name || saved.customerName || "",
+        companyName: saved.companyName || "",
         email: saved.email || "",
         phone: saved.phone || "",
         gstNumber: saved.gstNumber || "",
@@ -174,7 +204,14 @@ const CustomerManagement = () => {
           saved.type === "registered"
             ? "registered"
             : "unregistered",
+        customerType:
+          saved.customerType?.toLowerCase() === "registered" ||
+          saved.type === "registered"
+            ? "registered"
+            : "unregistered",
         createdAt: saved.createdAt || new Date().toISOString(),
+        stateCode: saved.stateCode || "",
+        addresses: saved.addresses || [],
       };
       setCustomers((prev) => [...prev, mappedCustomer]);
       toast({
@@ -182,12 +219,14 @@ const CustomerManagement = () => {
         description: "Customer has been successfully added to the database.",
       });
       setFormData({
-        name: "",
+        customerName: "",
+        companyName: "",
         email: "",
         phone: "",
         gstNumber: "",
         address: "",
         type: "unregistered",
+        customerType: "UNREGISTERED",
         stateCode: "",
       });
       setAddressForm({
@@ -242,11 +281,11 @@ const CustomerManagement = () => {
       const data = await fetchGSTDetails(formData.gstNumber);
       setFormData((prev) => ({
         ...prev,
-        name:
+        customerName:
           (data.primaryContact?.firstName || "") +
             (data.primaryContact?.lastName
               ? " " + data.primaryContact.lastName
-              : "") || prev.name,
+              : "") || prev.customerName,
         email: data.contactEmail || prev.email,
         phone: data.contactPhone || prev.phone,
         address: data.billingAddress || prev.address,
@@ -270,7 +309,7 @@ const CustomerManagement = () => {
 
   const filteredCustomers = customers.filter(
     (customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone.includes(searchTerm)
   );
@@ -279,7 +318,11 @@ const CustomerManagement = () => {
   const columns = [
     {
       Header: "Name",
-      accessor: "name",
+      accessor: "customerName",
+    },
+    {
+      Header: "Company Name",
+      accessor: "companyName",
       Cell: ({ row }: any) => (
         <span
           style={{
@@ -292,17 +335,47 @@ const CustomerManagement = () => {
             onOpen();
           }}
         >
-          {row.original.name}
+          {row.original.companyName}
         </span>
       ),
-    },
+    }, // New column
     { Header: "Email", accessor: "email" },
     { Header: "Phone", accessor: "phone" },
     { Header: "GST Number", accessor: "gstNumber" },
     { Header: "Type", accessor: "type" },
-    { Header: "State Code", accessor: "stateCode" },
-    { Header: "Created At", accessor: "createdAt" },
+    {
+      Header: "State Code",
+      accessor: "stateCode",
+      Cell: ({ value }: any) => {
+        const state = stateList.find((s) => s.stateCode === value);
+        return state ? `${state.stateCode} - ${state.stateName}` : value;
+      },
+    },
+    {
+      Header: "Created At",
+      accessor: "createdAt",
+      Cell: ({ value }: any) => {
+        const date = new Date(value);
+        const formatted = date.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        return <span>{formatted}</span>;
+      },
+    },
   ];
+
+  // Add customer type options matching backend enum
+  const customerTypeOptions = [
+    "REGISTERED",
+    "UNREGISTERED",
+    "REGULAR",
+    "PREMIUM",
+    "WHOLESALE",
+    "CORPORATE",
+  ] as const;
+  type CustomerTypeOption = (typeof customerTypeOptions)[number];
 
   return (
     <div className="space-y-6">
@@ -325,18 +398,34 @@ const CustomerManagement = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Customer Name *</Label>
+                  <Label htmlFor="customerName">Customer Name *</Label>
                   <Input
-                    id="name"
+                    id="customerName"
                     type="text"
                     required
-                    value={formData.name}
+                    value={formData.customerName}
                     onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
-                        name: e.target.value,
+                        customerName: e.target.value,
                       }));
                     }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    type="text"
+                    required
+                    value={formData.companyName}
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        companyName: e.target.value,
+                      }));
+                    }}
+                    placeholder="Enter company name"
                   />
                 </div>
                 <div>
@@ -415,6 +504,28 @@ const CustomerManagement = () => {
               </div>
 
               <div>
+                <Label htmlFor="customerType">Customer Type *</Label>
+                <select
+                  id="customerType"
+                  value={formData.customerType}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      customerType: e.target.value as CustomerTypeOption,
+                    }))
+                  }
+                  className="block w-full border rounded px-2 py-1"
+                  required
+                >
+                  {customerTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type.charAt(0) + type.slice(1).toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* <div>
                 <Label htmlFor="address">Address *</Label>
                 <Input
                   id="address"
@@ -428,7 +539,7 @@ const CustomerManagement = () => {
                     }));
                   }}
                 />
-              </div>
+              </div> */}
 
               <div>
                 <Label htmlFor="addressType">Address Type *</Label>
@@ -543,83 +654,187 @@ const CustomerManagement = () => {
         </CardContent>
       </Card>
       {/* Customer Details Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Customer Details</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => (open ? onOpen() : onClose())}
+      >
+        <DialogTrigger asChild>
+          {/* No trigger here, modal is opened by state */}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Customer Details</DialogTitle>
+          {/* Only one close button, styled top-right */}
+          <DialogClose asChild>
+            {/* <button
+              onClick={onClose}
+              className="absolute top-2 right-2 text-2xl text-gray-400 hover:text-gray-700 transition"
+            >
+              ×
+            </button> */}
+          </DialogClose>
+          <DialogDescription>
             {selectedCustomer && (
-              <div>
-                <p>
-                  <strong>Name:</strong> {selectedCustomer.name}
-                </p>
-                <p>
-                  <strong>Email:</strong> {selectedCustomer.email}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {selectedCustomer.phone}
-                </p>
-                <p>
-                  <strong>GST Number:</strong> {selectedCustomer.gstNumber}
-                </p>
-                <p>
-                  <strong>Type:</strong> {selectedCustomer.type}
-                </p>
-                <p>
-                  <strong>State Code:</strong> {selectedCustomer.stateCode}
-                </p>
-                <p>
-                  <strong>Created At:</strong>{" "}
-                  {new Date(selectedCustomer.createdAt).toLocaleString()}
-                </p>
-                <p>
-                  <strong>Address:</strong> {selectedCustomer.address}
-                </p>
-                {selectedCustomer.addresses &&
-                  selectedCustomer.addresses.length > 0 && (
-                    <div style={{ marginTop: 12 }}>
-                      <strong>Addresses:</strong>
-                      <ul style={{ marginLeft: 16 }}>
-                        {selectedCustomer.addresses.map((addr, idx) => (
-                          <li key={idx} style={{ marginBottom: 8 }}>
-                            <div>
-                              <strong>Type:</strong> {addr.addressType}
-                            </div>
-                            <div>
-                              <strong>Line 1:</strong> {addr.addressLine1}
-                            </div>
-                            {addr.addressLine2 && (
-                              <div>
-                                <strong>Line 2:</strong> {addr.addressLine2}
-                              </div>
-                            )}
-                            <div>
-                              <strong>City:</strong> {addr.city}
-                            </div>
-                            <div>
-                              <strong>State:</strong> {addr.state}
-                            </div>
-                            <div>
-                              <strong>Pincode:</strong> {addr.pincode}
-                            </div>
-                            <div>
-                              <strong>Default:</strong>{" "}
-                              {addr.isDefault ? "Yes" : "No"}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+              <div className="space-y-4 p-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h3 className="font-bold text-blue-700 mb-2 text-lg">
+                      Basic Info
+                    </h3>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">Name:</span>{" "}
+                      <span className="text-gray-900">
+                        {selectedCustomer.customerName}
+                      </span>
                     </div>
-                  )}
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        Company Name:
+                      </span>{" "}
+                      <span className="text-gray-900">
+                        {selectedCustomer.companyName}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        Email:
+                      </span>{" "}
+                      <span className="text-gray-900">
+                        {selectedCustomer.email}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        Phone:
+                      </span>{" "}
+                      <span className="text-gray-900">
+                        {selectedCustomer.phone}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        GST Number:
+                      </span>{" "}
+                      <span className="text-blue-700 underline underline-offset-2">
+                        {selectedCustomer.gstNumber}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">Type:</span>{" "}
+                      <span className="text-gray-900 capitalize">
+                        {selectedCustomer.type}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        State Code:
+                      </span>{" "}
+                      <span className="text-gray-900">
+                        {selectedCustomer.stateCode}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        Created At:
+                      </span>{" "}
+                      <span className="text-gray-900">
+                        {new Date(selectedCustomer.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <h3 className="font-bold text-green-700 mb-2 text-lg">
+                      Primary Address
+                    </h3>
+                    <div className="mb-1">
+                      <span className="font-semibold text-gray-700">
+                        Address:
+                      </span>{" "}
+                      <span className="text-gray-900">
+                        {selectedCustomer.address}
+                      </span>
+                    </div>
+                    {selectedCustomer.addresses &&
+                      selectedCustomer.addresses.length > 0 && (
+                        <div className="mt-2">
+                          <h4 className="font-semibold text-green-600 mb-1">
+                            All Addresses:
+                          </h4>
+                          <ul className="space-y-2">
+                            {selectedCustomer.addresses.map((addr, idx) => (
+                              <li
+                                key={idx}
+                                className="bg-white rounded border p-3"
+                              >
+                                <div className="mb-1">
+                                  <span className="font-semibold text-gray-700">
+                                    Type:
+                                  </span>{" "}
+                                  <span className="text-gray-900">
+                                    {addr.addressType}
+                                  </span>
+                                </div>
+                                <div className="mb-1">
+                                  <span className="font-semibold text-gray-700">
+                                    Line 1:
+                                  </span>{" "}
+                                  <span className="text-gray-900">
+                                    {addr.addressLine1}
+                                  </span>
+                                </div>
+                                {addr.addressLine2 && (
+                                  <div className="mb-1">
+                                    <span className="font-semibold text-gray-700">
+                                      Line 2:
+                                    </span>{" "}
+                                    <span className="text-gray-900">
+                                      {addr.addressLine2}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="mb-1">
+                                  <span className="font-semibold text-gray-700">
+                                    City:
+                                  </span>{" "}
+                                  <span className="text-gray-900">
+                                    {addr.city}
+                                  </span>
+                                </div>
+                                <div className="mb-1">
+                                  <span className="font-semibold text-gray-700">
+                                    State:
+                                  </span>{" "}
+                                  <span className="text-gray-900">
+                                    {addr.state}
+                                  </span>
+                                </div>
+                                <div className="mb-1">
+                                  <span className="font-semibold text-gray-700">
+                                    Pincode:
+                                  </span>{" "}
+                                  <span className="text-gray-900">
+                                    {addr.pincode}
+                                  </span>
+                                </div>
+                                <div className="mb-1">
+                                  <span className="font-semibold text-gray-700">
+                                    Default:
+                                  </span>{" "}
+                                  <span className="text-gray-900">
+                                    {addr.isDefault ? "Yes" : "No"}
+                                  </span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                  </div>
+                </div>
               </div>
             )}
-          </ModalBody>
-          <ModalFooter>
-            <ChakraButton onClick={onClose}>Close</ChakraButton>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </DialogDescription>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

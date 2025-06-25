@@ -26,6 +26,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public List<CustomerResponse> getAll() {
         return customerRepository.findAll().stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // Descending by createdAt
                 .map(c -> modelMapper.map(c, CustomerResponse.class))
                 .collect(Collectors.toList());
     }
@@ -42,8 +43,12 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = modelMapper.map(request, Customer.class);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setUpdatedAt(LocalDateTime.now());
-        // Save customer first to get ID
-        Customer saved = customerRepository.save(customer);
+        customer.setCustomerType(request.getCustomerType());
+        // Explicitly set companyName from request to ensure mapping
+        System.out.println("[DEBUG] companyName from request: " + request.getCompanyName());
+        customer.setCompanyName(request.getCompanyName() != null ? request.getCompanyName() : "");
+        // Save customer first to get ID and ensure it's not transient
+        Customer saved = customerRepository.saveAndFlush(customer);
         // Save addresses if present
         if (request.getAddresses() != null && !request.getAddresses().isEmpty()) {
             List<CustomerAddress> addresses = request.getAddresses().stream()
@@ -53,7 +58,12 @@ public class CustomerServiceImpl implements CustomerService {
                     addr.setAddressLine1(addrReq.getAddressLine1());
                     addr.setAddressLine2(addrReq.getAddressLine2());
                     addr.setCity(addrReq.getCity());
-                    addr.setState(addrReq.getState());
+                    // If isDefault is false, set state to stateCode (code), else use state name
+                    if (Boolean.FALSE.equals(addrReq.getIsDefault())) {
+                        addr.setState(saved.getStateCode()); // Save state code if not default
+                    } else {
+                        addr.setState(addrReq.getState()); // Save state name if default
+                    }
                     addr.setPincode(addrReq.getPincode());
                     addr.setIsDefault(addrReq.getIsDefault());
                     addr.setAddressType(addrReq.getAddressType());
