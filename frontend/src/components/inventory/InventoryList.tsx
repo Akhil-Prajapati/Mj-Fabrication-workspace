@@ -1,11 +1,16 @@
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, Edit, Trash2, AlertTriangle } from "lucide-react";
 
 interface InventoryItem {
   itemId: string;
@@ -32,45 +37,52 @@ interface InventoryListProps {
 }
 
 const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [stockFilter, setStockFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.hsnCode.includes(searchTerm) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
-    
-    const matchesStock = stockFilter === 'all' ||
-                        (stockFilter === 'low' && item.stockQuantity <= item.reorderLevel) ||
-                        (stockFilter === 'out' && item.stockQuantity === 0) ||
-                        (stockFilter === 'available' && item.stockQuantity > item.reorderLevel);
-    
+  const filteredItems = items.filter((item) => {
+    const matchesSearch =
+      item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.hsnCode.includes(searchTerm) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      categoryFilter === "all" || item.category === categoryFilter;
+
+    const matchesStock =
+      stockFilter === "all" ||
+      (stockFilter === "low" && item.stockQuantity <= item.reorderLevel) ||
+      (stockFilter === "out" && item.stockQuantity === 0) ||
+      (stockFilter === "available" && item.stockQuantity > item.reorderLevel);
+
     return matchesSearch && matchesCategory && matchesStock;
   });
 
   const sortedItems = [...filteredItems].sort((a, b) => {
     switch (sortBy) {
-      case 'name':
+      case "name":
         return a.itemName.localeCompare(b.itemName);
-      case 'price':
+      case "price":
         return a.sellingPrice - b.sellingPrice;
-      case 'stock':
+      case "stock":
         return a.stockQuantity - b.stockQuantity;
-      case 'created':
-        return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+      case "created":
+        return (
+          new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+        );
       default:
         return 0;
     }
   });
 
   const getStockStatus = (item: InventoryItem) => {
-    if (item.stockQuantity === 0) return { status: 'Out of Stock', color: 'destructive' };
-    if (item.stockQuantity <= item.reorderLevel) return { status: 'Low Stock', color: 'warning' };
-    return { status: 'In Stock', color: 'success' };
+    if (item.stockQuantity === 0)
+      return { status: "Out of Stock", color: "destructive" };
+    if (item.stockQuantity <= item.reorderLevel)
+      return { status: "Low Stock", color: "warning" };
+    return { status: "In Stock", color: "success" };
   };
 
   return (
@@ -94,20 +106,15 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
                 className="pl-10"
               />
             </div>
-            
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="shades">Shades</SelectItem>
-                <SelectItem value="doors">Door Frames</SelectItem>
-                <SelectItem value="windows">Window Frames</SelectItem>
-                <SelectItem value="stairs">Staircases</SelectItem>
-                <SelectItem value="custom">Custom Work</SelectItem>
-              </SelectContent>
-            </Select>
+
+            <SelectItem value="all">All Categories</SelectItem>
+            {[...new Set(items.map((item) => item.category))]
+              .filter((cat) => cat && cat.trim() !== "")
+              .map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
 
             <Select value={stockFilter} onValueChange={setStockFilter}>
               <SelectTrigger>
@@ -145,18 +152,31 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
         {sortedItems.map((item) => {
           const stockStatus = getStockStatus(item);
           return (
-            <Card key={item.itemId} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={item.itemId}
+              className="hover:shadow-lg transition-shadow"
+            >
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg">{item.itemName}</CardTitle>
-                    <p className="text-sm text-gray-600">{item.category} - {item.subCategory}</p>
+                    <p className="text-sm text-gray-600">
+                      {item.category} - {item.subCategory}
+                    </p>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => onEdit(item)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEdit(item)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => onDelete(item.itemId)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onDelete(item.itemId)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -164,11 +184,14 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">HSN: {item.hsnCode}</span>
+                  <span className="text-sm text-gray-600">
+                    HSN: {item.hsnCode}
+                  </span>
                   <Badge variant={stockStatus.color as any}>
-                    {item.stockQuantity <= item.reorderLevel && item.stockQuantity > 0 && (
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                    )}
+                    {item.stockQuantity <= item.reorderLevel &&
+                      item.stockQuantity > 0 && (
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                      )}
                     {stockStatus.status}
                   </Badge>
                 </div>
@@ -176,29 +199,44 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-gray-600">Stock:</span>
-                    <span className="ml-2 font-medium">{item.stockQuantity} {item.unit}</span>
+                    <span className="ml-2 font-medium">
+                      {item.stockQuantity} {item.unit}
+                    </span>
                   </div>
                   <div>
                     <span className="text-gray-600">Price:</span>
-                    <span className="ml-2 font-medium">₹{item.sellingPrice}</span>
+                    <span className="ml-2 font-medium">
+                      ₹{item.sellingPrice}
+                    </span>
                   </div>
                 </div>
 
                 {item.description && (
-                  <p className="text-sm text-gray-600 truncate" title={item.description}>
+                  <p
+                    className="text-sm text-gray-600 truncate"
+                    title={item.description}
+                  >
                     {item.description}
                   </p>
                 )}
 
                 {Object.keys(item.specifications).length > 0 && (
                   <div className="pt-2 border-t">
-                    <span className="text-xs text-gray-500">Specifications:</span>
+                    <span className="text-xs text-gray-500">
+                      Specifications:
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {Object.entries(item.specifications).slice(0, 2).map(([key, value]) => (
-                        <Badge key={key} variant="secondary" className="text-xs">
-                          {key}: {value}
-                        </Badge>
-                      ))}
+                      {Object.entries(item.specifications)
+                        .slice(0, 2)
+                        .map(([key, value]) => (
+                          <Badge
+                            key={key}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {key}: {value}
+                          </Badge>
+                        ))}
                       {Object.keys(item.specifications).length > 2 && (
                         <Badge variant="secondary" className="text-xs">
                           +{Object.keys(item.specifications).length - 2} more
@@ -216,7 +254,9 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
       {sortedItems.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
-            <p className="text-gray-500">No items found matching your criteria.</p>
+            <p className="text-gray-500">
+              No items found matching your criteria.
+            </p>
           </CardContent>
         </Card>
       )}
