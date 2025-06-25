@@ -4,9 +4,8 @@ import com.mjfabrication.enums.CustomerType;
 import com.mjfabrication.payload.request.CustomerRequest;
 import com.mjfabrication.payload.response.CustomerResponse;
 import com.mjfabrication.service.CustomerService;
-import com.mjfabrication.util.CryptoService;
+import com.mjfabrication.util.DecryptionUtilService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -19,9 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CustomerController {
     private final CustomerService customerService;
-
-    @Autowired
-    private CryptoService cryptoService;
+    private final DecryptionUtilService decryptionUtilService;
 
     @GetMapping
     public List<CustomerResponse> getAll() {
@@ -35,23 +32,25 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@RequestBody Map<String, Object> requestMap) {
-        // Decrypt if 'data' key is present (for encrypted payloads)
-        if (requestMap.containsKey("data")) {
-            try {
-                String encrypted = (String) requestMap.get("data");
-                String decryptedJson = cryptoService.decrypt(encrypted);
-                // If decryptedJson is still base64, decode it
-                if (decryptedJson.matches("^[A-Za-z0-9+/=]+$")) {
-                    byte[] decodedBytes = java.util.Base64.getDecoder().decode(decryptedJson);
-                    decryptedJson = new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
-                }
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                requestMap = mapper.readValue(decryptedJson, Map.class);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to decrypt request", e);
-            }
-        }
-        // Map fields to CustomerRequest
+        requestMap = decryptionUtilService.decryptIfNeeded(requestMap);
+        CustomerRequest request = mapToCustomerRequest(requestMap);
+        CustomerResponse response = customerService.create(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerResponse> update(@PathVariable UUID id, @Valid @RequestBody CustomerRequest request) {
+        return ResponseEntity.ok(customerService.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        customerService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Helper method to map requestMap to CustomerRequest
+    private CustomerRequest mapToCustomerRequest(Map<String, Object> requestMap) {
         CustomerRequest request = new CustomerRequest();
         request.setCustomerName((String) requestMap.get("customerName"));
         request.setPhone((String) requestMap.get("phone"));
@@ -67,7 +66,6 @@ public class CustomerController {
                 throw new RuntimeException("Invalid customer type: " + customerTypeStr);
             }
         }
-        // Map addresses if present
         if (requestMap.containsKey("addresses")) {
             java.util.List<Map<String, Object>> addrList = (java.util.List<Map<String, Object>>) requestMap.get("addresses");
             java.util.List<com.mjfabrication.payload.request.CustomerAddressRequest> addresses = new java.util.ArrayList<>();
@@ -87,18 +85,6 @@ public class CustomerController {
             }
             request.setAddresses(addresses);
         }
-        CustomerResponse response = customerService.create(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<CustomerResponse> update(@PathVariable UUID id, @Valid @RequestBody CustomerRequest request) {
-        return ResponseEntity.ok(customerService.update(id, request));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        customerService.delete(id);
-        return ResponseEntity.noContent().build();
+        return request;
     }
 }

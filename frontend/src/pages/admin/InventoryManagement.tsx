@@ -5,6 +5,12 @@ import { toast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import InventoryFormEnhanced from "@/components/inventory/InventoryFormEnhanced";
 import InventoryList from "@/components/inventory/InventoryList";
+import {
+  getInventoryItems,
+  createInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+} from "@/api/inventory";
 
 interface InventoryItem {
   itemId: string;
@@ -32,49 +38,67 @@ const InventoryManagement = () => {
   const [editingItem, setEditingItem] = useState<InventoryItem | undefined>();
 
   useEffect(() => {
-    // Load inventory from localStorage
-    const savedInventory = JSON.parse(
-      localStorage.getItem("inventory") || "[]"
-    );
-    setItems(savedInventory);
+    // Load inventory from backend
+    getInventoryItems()
+      .then(setItems)
+      .catch(() => setItems([]));
   }, [navigate]);
 
-  const saveItems = (updatedItems: InventoryItem[]) => {
-    setItems(updatedItems);
-    localStorage.setItem("inventory", JSON.stringify(updatedItems));
+  const handleAddItem = async (newItem: InventoryItem) => {
+    try {
+      const saved = await createInventoryItem(newItem);
+      setItems((prev) => [...prev, saved]);
+      setShowForm(false);
+      toast({
+        title: "Item Added",
+        description: `${saved.itemName} has been added to inventory.`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to add inventory item.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleAddItem = (newItem: InventoryItem) => {
-    const updatedItems = [...items, newItem];
-    saveItems(updatedItems);
-    setShowForm(false);
-    toast({
-      title: "Item Added",
-      description: `${newItem.itemName} has been added to inventory.`,
-    });
+  const handleEditItem = async (updatedItem: InventoryItem) => {
+    try {
+      const saved = await updateInventoryItem(updatedItem.itemId, updatedItem);
+      setItems((prev) =>
+        prev.map((item) => (item.itemId === saved.itemId ? saved : item))
+      );
+      setShowForm(false);
+      setEditingItem(undefined);
+      toast({
+        title: "Item Updated",
+        description: `${saved.itemName} has been updated.`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update inventory item.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditItem = (updatedItem: InventoryItem) => {
-    const updatedItems = items.map((item) =>
-      item.itemId === updatedItem.itemId ? updatedItem : item
-    );
-    saveItems(updatedItems);
-    setShowForm(false);
-    setEditingItem(undefined);
-    toast({
-      title: "Item Updated",
-      description: `${updatedItem.itemName} has been updated.`,
-    });
-  };
-
-  const handleDeleteItem = (itemId: string) => {
+  const handleDeleteItem = async (itemId: string) => {
     const itemToDelete = items.find((item) => item.itemId === itemId);
-    const updatedItems = items.filter((item) => item.itemId !== itemId);
-    saveItems(updatedItems);
-    toast({
-      title: "Item Deleted",
-      description: `${itemToDelete?.itemName} has been removed from inventory.`,
-    });
+    try {
+      await deleteInventoryItem(itemId);
+      setItems((prev) => prev.filter((item) => item.itemId !== itemId));
+      toast({
+        title: "Item Deleted",
+        description: `${itemToDelete?.itemName} has been removed from inventory.`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to delete inventory item.",
+        variant: "destructive",
+      });
+    }
   };
 
   const startEdit = (item: InventoryItem) => {

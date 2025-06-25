@@ -1,12 +1,17 @@
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
 interface InventoryItem {
   itemId: string;
@@ -33,56 +38,88 @@ interface InventoryFormProps {
 }
 
 const categories = {
-  'shades': ['Outdoor Shades', 'Indoor Shades', 'Commercial Shades', 'Residential Shades'],
-  'doors': ['Main Door Frames', 'Interior Door Frames', 'Security Door Frames', 'Sliding Door Frames'],
-  'windows': ['Casement Windows', 'Sliding Windows', 'Fixed Windows', 'Bay Windows'],
-  'stairs': ['Straight Stairs', 'Curved Stairs', 'Spiral Stairs', 'Platform Stairs'],
-  'custom': ['Custom Fabrication', 'Repair Work', 'Installation Services', 'Consultation']
+  shades: [
+    "Outdoor Shades",
+    "Indoor Shades",
+    "Commercial Shades",
+    "Residential Shades",
+  ],
+  doors: [
+    "Main Door Frames",
+    "Interior Door Frames",
+    "Security Door Frames",
+    "Sliding Door Frames",
+  ],
+  windows: [
+    "Casement Windows",
+    "Sliding Windows",
+    "Fixed Windows",
+    "Bay Windows",
+  ],
+  stairs: [
+    "Straight Stairs",
+    "Curved Stairs",
+    "Spiral Stairs",
+    "Platform Stairs",
+  ],
+  custom: [
+    "Custom Fabrication",
+    "Repair Work",
+    "Installation Services",
+    "Consultation",
+  ],
 };
 
-const units = ['Pieces', 'Meters', 'Square Meters', 'Kilograms', 'Feet', 'Square Feet'];
+const units = [
+  "Pieces",
+  "Meters",
+  "Square Meters",
+  "Kilograms",
+  "Feet",
+  "Square Feet",
+];
 
 const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
-    itemName: item?.itemName || '',
-    category: item?.category || '',
-    subCategory: item?.subCategory || '',
-    description: item?.description || '',
-    hsnCode: item?.hsnCode || '',
-    unit: item?.unit || 'Pieces',
+    itemName: item?.itemName || "",
+    category: item?.category || "",
+    subCategory: item?.subCategory || "",
+    description: item?.description || "",
+    hsnCode: item?.hsnCode || "",
+    unit: item?.unit || "Pieces",
     costPrice: item?.costPrice || 0,
     sellingPrice: item?.sellingPrice || 0,
     stockQuantity: item?.stockQuantity || 0,
     reorderLevel: item?.reorderLevel || 10,
-    supplierInfo: item?.supplierInfo || '',
+    supplierInfo: item?.supplierInfo || "",
     specifications: item?.specifications || {},
   });
 
-  const [specifications, setSpecifications] = useState<Array<{key: string, value: string}>>([
-    { key: '', value: '' }
-  ]);
+  const [specifications, setSpecifications] = useState<
+    Array<{ key: string; value: string }>
+  >([{ key: "", value: "" }]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.itemName || !formData.category || !formData.hsnCode) {
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     const specs: Record<string, string> = {};
-    specifications.forEach(spec => {
+    specifications.forEach((spec) => {
       if (spec.key && spec.value) {
         specs[spec.key] = spec.value;
       }
     });
 
     const newItem: InventoryItem = {
-      itemId: item?.itemId || `ITM-${Date.now()}`,
+      itemId: item?.itemId || `ITM-`,
       itemName: formData.itemName!,
       category: formData.category!,
       subCategory: formData.subCategory!,
@@ -93,20 +130,24 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
       sellingPrice: Number(formData.sellingPrice),
       stockQuantity: Number(formData.stockQuantity),
       reorderLevel: Number(formData.reorderLevel),
-      supplierInfo: formData.supplierInfo || '',
+      supplierInfo: formData.supplierInfo || "",
       specifications: specs,
       createdDate: item?.createdDate || new Date().toISOString(),
-      lastModified: new Date().toISOString()
+      lastModified: new Date().toISOString(),
     };
 
     onSubmit(newItem);
   };
 
   const addSpecification = () => {
-    setSpecifications([...specifications, { key: '', value: '' }]);
+    setSpecifications([...specifications, { key: "", value: "" }]);
   };
 
-  const updateSpecification = (index: number, field: 'key' | 'value', value: string) => {
+  const updateSpecification = (
+    index: number,
+    field: "key" | "value",
+    value: string
+  ) => {
     const updated = [...specifications];
     updated[index][field] = value;
     setSpecifications(updated);
@@ -119,7 +160,7 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>{item ? 'Edit Item' : 'Add New Item'}</CardTitle>
+        <CardTitle>{item ? "Edit Item" : "Add New Item"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -129,7 +170,9 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
               <Input
                 id="itemName"
                 value={formData.itemName}
-                onChange={(e) => setFormData({...formData, itemName: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, itemName: e.target.value })
+                }
                 required
               />
             </div>
@@ -138,7 +181,9 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
               <Input
                 id="hsnCode"
                 value={formData.hsnCode}
-                onChange={(e) => setFormData({...formData, hsnCode: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, hsnCode: e.target.value })
+                }
                 placeholder="e.g., 7308"
                 required
               />
@@ -148,9 +193,11 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="category">Category *</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => setFormData({...formData, category: value, subCategory: ''})}
+              <Select
+                value={formData.category}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, category: value, subCategory: "" })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -166,18 +213,25 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
             </div>
             <div>
               <Label htmlFor="subCategory">Sub Category</Label>
-              <Select 
-                value={formData.subCategory} 
-                onValueChange={(value) => setFormData({...formData, subCategory: value})}
+              <Select
+                value={formData.subCategory}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, subCategory: value })
+                }
                 disabled={!formData.category}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select sub category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {formData.category && categories[formData.category as keyof typeof categories]?.map((sub) => (
-                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                  ))}
+                  {formData.category &&
+                    categories[
+                      formData.category as keyof typeof categories
+                    ]?.map((sub) => (
+                      <SelectItem key={sub} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -188,7 +242,9 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               placeholder="Detailed description of the item"
             />
           </div>
@@ -196,16 +252,20 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="unit">Unit</Label>
-              <Select 
-                value={formData.unit} 
-                onValueChange={(value) => setFormData({...formData, unit: value})}
+              <Select
+                value={formData.unit}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, unit: value })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {units.map((unit) => (
-                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                    <SelectItem key={unit} value={unit}>
+                      {unit}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -216,7 +276,12 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
                 id="costPrice"
                 type="number"
                 value={formData.costPrice}
-                onChange={(e) => setFormData({...formData, costPrice: Number(e.target.value)})}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    costPrice: Number(e.target.value),
+                  })
+                }
                 min="0"
                 step="0.01"
               />
@@ -227,7 +292,12 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
                 id="sellingPrice"
                 type="number"
                 value={formData.sellingPrice}
-                onChange={(e) => setFormData({...formData, sellingPrice: Number(e.target.value)})}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    sellingPrice: Number(e.target.value),
+                  })
+                }
                 min="0"
                 step="0.01"
               />
@@ -241,7 +311,12 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
                 id="stockQuantity"
                 type="number"
                 value={formData.stockQuantity}
-                onChange={(e) => setFormData({...formData, stockQuantity: Number(e.target.value)})}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    stockQuantity: Number(e.target.value),
+                  })
+                }
                 min="0"
               />
             </div>
@@ -251,7 +326,12 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
                 id="reorderLevel"
                 type="number"
                 value={formData.reorderLevel}
-                onChange={(e) => setFormData({...formData, reorderLevel: Number(e.target.value)})}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    reorderLevel: Number(e.target.value),
+                  })
+                }
                 min="0"
               />
             </div>
@@ -262,7 +342,9 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
             <Input
               id="supplierInfo"
               value={formData.supplierInfo}
-              onChange={(e) => setFormData({...formData, supplierInfo: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, supplierInfo: e.target.value })
+              }
               placeholder="Supplier name, contact details"
             />
           </div>
@@ -270,7 +352,12 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
           <div>
             <div className="flex justify-between items-center mb-4">
               <Label>Specifications</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addSpecification}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSpecification}
+              >
                 Add Specification
               </Button>
             </div>
@@ -280,12 +367,16 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
                   <Input
                     placeholder="Property (e.g., Material)"
                     value={spec.key}
-                    onChange={(e) => updateSpecification(index, 'key', e.target.value)}
+                    onChange={(e) =>
+                      updateSpecification(index, "key", e.target.value)
+                    }
                   />
                   <Input
                     placeholder="Value (e.g., Steel)"
                     value={spec.value}
-                    onChange={(e) => updateSpecification(index, 'value', e.target.value)}
+                    onChange={(e) =>
+                      updateSpecification(index, "value", e.target.value)
+                    }
                   />
                   {specifications.length > 1 && (
                     <Button
@@ -304,7 +395,7 @@ const InventoryForm = ({ item, onSubmit, onCancel }: InventoryFormProps) => {
 
           <div className="flex gap-4 pt-4">
             <Button type="submit" className="flex-1">
-              {item ? 'Update Item' : 'Add Item'}
+              {item ? "Update Item" : "Add Item"}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel

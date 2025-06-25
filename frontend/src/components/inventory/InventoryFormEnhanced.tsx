@@ -1,13 +1,19 @@
-
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Save, X } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Save, X } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { createInventoryItem } from "@/api/inventory";
 
 interface InventoryItem {
   itemId: string;
@@ -34,53 +40,58 @@ interface InventoryFormEnhancedProps {
   onCancel: () => void;
 }
 
-const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhancedProps) => {
+const InventoryFormEnhanced = ({
+  item,
+  onSubmit,
+  onCancel,
+}: InventoryFormEnhancedProps) => {
   const [formData, setFormData] = useState<InventoryItem>({
-    itemId: item?.itemId || `ITM-${Date.now()}`,
-    itemName: item?.itemName || '',
-    category: item?.category || '',
-    subCategory: item?.subCategory || '',
-    description: item?.description || '',
-    hsnCode: item?.hsnCode || '',
-    unit: item?.unit || 'Pieces',
+    itemId: item?.itemId || `ITM-`,
+    itemName: item?.itemName || "",
+    category: item?.category || "",
+    subCategory: item?.subCategory || "",
+    description: item?.description || "",
+    hsnCode: item?.hsnCode || "",
+    unit: item?.unit || "Pieces",
     costPrice: item?.costPrice || 0,
     sellingPrice: item?.sellingPrice || 0,
     stockQuantity: item?.stockQuantity || 0,
     reorderLevel: item?.reorderLevel || 0,
-    supplierInfo: item?.supplierInfo || '',
+    supplierInfo: item?.supplierInfo || "",
     specifications: item?.specifications || {},
     gstRate: item?.gstRate || 18,
     createdDate: item?.createdDate || new Date().toISOString(),
-    lastModified: new Date().toISOString()
+    lastModified: new Date().toISOString(),
   });
+  console.log(formData, "formData in InventoryFormEnhanced");
 
   const [customCategories, setCustomCategories] = useState<string[]>([]);
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
 
   const defaultCategories = [
-    'windows',
-    'doors', 
-    'brackets',
-    'frames',
-    'railings',
-    'canopies',
-    'staircases',
-    'gates',
-    'grills',
-    'shutters'
+    "windows",
+    "doors",
+    "brackets",
+    "frames",
+    "railings",
+    "canopies",
+    "staircases",
+    "gates",
+    "grills",
+    "shutters",
   ];
 
   useEffect(() => {
     // Load custom categories from localStorage
-    const savedCategories = localStorage.getItem('customCategories');
+    const savedCategories = localStorage.getItem("customCategories");
     if (savedCategories) {
       setCustomCategories(JSON.parse(savedCategories));
     }
   }, []);
 
   const saveCustomCategories = (categories: string[]) => {
-    localStorage.setItem('customCategories', JSON.stringify(categories));
+    localStorage.setItem("customCategories", JSON.stringify(categories));
     setCustomCategories(categories);
   };
 
@@ -88,8 +99,8 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
     if (newCategory.trim() && !customCategories.includes(newCategory.trim())) {
       const updatedCategories = [...customCategories, newCategory.trim()];
       saveCustomCategories(updatedCategories);
-      setFormData(prev => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory('');
+      setFormData((prev) => ({ ...prev, category: newCategory.trim() }));
+      setNewCategory("");
       setShowAddCategory(false);
       toast({
         title: "Category Added",
@@ -99,36 +110,62 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
   };
 
   const handleSpecificationChange = (key: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      specifications: { ...prev.specifications, [key]: value }
+      specifications: { ...prev.specifications, [key]: value },
     }));
   };
 
   const addSpecification = () => {
     const key = `spec_${Object.keys(formData.specifications).length + 1}`;
-    handleSpecificationChange(key, '');
+    handleSpecificationChange(key, "");
   };
 
   const removeSpecification = (key: string) => {
     const newSpecs = { ...formData.specifications };
     delete newSpecs[key];
-    setFormData(prev => ({ ...prev, specifications: newSpecs }));
+    setFormData((prev) => ({ ...prev, specifications: newSpecs }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.itemName || !formData.category) {
+    if (!formData.itemId || !formData.itemName || !formData.category) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
+        description:
+          "Please fill in all required fields, including a unique Item ID.",
+        variant: "destructive",
       });
       return;
     }
-
-    onSubmit(formData);
+    // Remove whitespace and check for truly empty itemId
+    const trimmedId = formData.itemId.trim();
+    if (!trimmedId) {
+      toast({
+        title: "Error",
+        description: "Item ID cannot be empty or whitespace.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const saved = await createInventoryItem({
+        ...formData,
+        itemId: trimmedId,
+      });
+      toast({
+        title: "Inventory Item Added",
+        description: `${saved.itemName} has been added to inventory.`,
+      });
+      onSubmit(saved);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description:
+          "Failed to add inventory item. Make sure Item ID is unique.",
+        variant: "destructive",
+      });
+    }
   };
 
   const allCategories = [...defaultCategories, ...customCategories];
@@ -138,7 +175,7 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Save className="h-5 w-5" />
-          {item ? 'Edit Inventory Item' : 'Add New Inventory Item'}
+          {item ? "Edit Inventory Item" : "Add New Inventory Item"}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -150,17 +187,22 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
               <Input
                 id="itemName"
                 value={formData.itemName}
-                onChange={(e) => setFormData(prev => ({ ...prev, itemName: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, itemName: e.target.value }))
+                }
                 required
               />
             </div>
             <div>
-              <Label htmlFor="itemId">Item ID</Label>
+              <Label htmlFor="itemId">Item ID *</Label>
               <Input
                 id="itemId"
                 value={formData.itemId}
-                onChange={(e) => setFormData(prev => ({ ...prev, itemId: e.target.value }))}
-                disabled={!!item}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, itemId: e.target.value }))
+                }
+                required
+                placeholder="Enter unique item ID"
               />
             </div>
           </div>
@@ -171,14 +213,20 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
               <div>
                 <Label htmlFor="category">Category *</Label>
                 <div className="flex gap-2">
-                  <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, category: value }))
+                    }
+                  >
                     <SelectTrigger className="flex-1">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {allCategories.map(category => (
+                      {allCategories.map((category) => (
                         <SelectItem key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1')}
+                          {category.charAt(0).toUpperCase() +
+                            category.slice(1).replace(/([A-Z])/g, " $1")}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -192,7 +240,7 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 {showAddCategory && (
                   <div className="flex gap-2 mt-2">
                     <Input
@@ -203,7 +251,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                     <Button type="button" size="sm" onClick={addCustomCategory}>
                       Add
                     </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={() => setShowAddCategory(false)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddCategory(false)}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -214,7 +267,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                 <Input
                   id="subCategory"
                   value={formData.subCategory}
-                  onChange={(e) => setFormData(prev => ({ ...prev, subCategory: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      subCategory: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -224,7 +282,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
               />
             </div>
           </div>
@@ -236,12 +299,19 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
               <Input
                 id="hsnCode"
                 value={formData.hsnCode}
-                onChange={(e) => setFormData(prev => ({ ...prev, hsnCode: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, hsnCode: e.target.value }))
+                }
               />
             </div>
             <div>
               <Label htmlFor="unit">Unit</Label>
-              <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
+              <Select
+                value={formData.unit}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, unit: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -257,7 +327,15 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
             </div>
             <div>
               <Label htmlFor="gstRate">GST Rate (%)</Label>
-              <Select value={formData.gstRate.toString()} onValueChange={(value) => setFormData(prev => ({ ...prev, gstRate: parseFloat(value) }))}>
+              <Select
+                value={formData.gstRate.toString()}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    gstRate: parseFloat(value),
+                  }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -280,7 +358,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                 id="costPrice"
                 type="number"
                 value={formData.costPrice}
-                onChange={(e) => setFormData(prev => ({ ...prev, costPrice: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    costPrice: parseFloat(e.target.value) || 0,
+                  }))
+                }
               />
             </div>
             <div>
@@ -289,7 +372,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                 id="sellingPrice"
                 type="number"
                 value={formData.sellingPrice}
-                onChange={(e) => setFormData(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    sellingPrice: parseFloat(e.target.value) || 0,
+                  }))
+                }
               />
             </div>
             <div>
@@ -298,7 +386,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                 id="stockQuantity"
                 type="number"
                 value={formData.stockQuantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    stockQuantity: parseInt(e.target.value) || 0,
+                  }))
+                }
               />
             </div>
             <div>
@@ -307,7 +400,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                 id="reorderLevel"
                 type="number"
                 value={formData.reorderLevel}
-                onChange={(e) => setFormData(prev => ({ ...prev, reorderLevel: parseInt(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    reorderLevel: parseInt(e.target.value) || 0,
+                  }))
+                }
               />
             </div>
           </div>
@@ -318,7 +416,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
             <Input
               id="supplierInfo"
               value={formData.supplierInfo}
-              onChange={(e) => setFormData(prev => ({ ...prev, supplierInfo: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  supplierInfo: e.target.value,
+                }))
+              }
               placeholder="Supplier name and contact details"
             />
           </div>
@@ -327,7 +430,12 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
           <div>
             <div className="flex justify-between items-center mb-4">
               <Label>Specifications</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addSpecification}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSpecification}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Specification
               </Button>
@@ -337,19 +445,24 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
                 <div key={key} className="flex gap-2">
                   <Input
                     placeholder="Property name"
-                    value={key.replace('spec_', '')}
+                    value={key.replace("spec_", "")}
                     onChange={(e) => {
                       const newKey = `spec_${e.target.value}`;
                       const newSpecs = { ...formData.specifications };
                       delete newSpecs[key];
                       newSpecs[newKey] = value;
-                      setFormData(prev => ({ ...prev, specifications: newSpecs }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        specifications: newSpecs,
+                      }));
                     }}
                   />
                   <Input
                     placeholder="Property value"
                     value={value}
-                    onChange={(e) => handleSpecificationChange(key, e.target.value)}
+                    onChange={(e) =>
+                      handleSpecificationChange(key, e.target.value)
+                    }
                   />
                   <Button
                     type="button"
@@ -368,9 +481,14 @@ const InventoryFormEnhanced = ({ item, onSubmit, onCancel }: InventoryFormEnhanc
           <div className="flex gap-4">
             <Button type="submit" className="flex-1">
               <Save className="h-4 w-4 mr-2" />
-              {item ? 'Update Item' : 'Add Item'}
+              {item ? "Update Item" : "Add Item"}
             </Button>
-            <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1"
+            >
               Cancel
             </Button>
           </div>
