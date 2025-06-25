@@ -22,6 +22,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { getStates } from "@/api/state";
+import { useUserStore } from "@/stores/user-store";
 
 interface Address {
   addressLine1: string;
@@ -50,6 +51,7 @@ interface Customer {
 
 const CustomerManagement = () => {
   const navigate = useNavigate();
+  const setSelectedCustomerId = useUserStore((state) => state.setSelectedCustomerId);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -338,7 +340,7 @@ const CustomerManagement = () => {
           {row.original.companyName}
         </span>
       ),
-    }, // New column
+    },
     { Header: "Email", accessor: "email" },
     { Header: "Phone", accessor: "phone" },
     { Header: "GST Number", accessor: "gstNumber" },
@@ -363,6 +365,23 @@ const CustomerManagement = () => {
         });
         return <span>{formatted}</span>;
       },
+    },
+    {
+      Header: "Actions",
+      id: "actions",
+      Cell: ({ row }: any) => (
+        <Button
+          size="sm"
+          variant="outline"
+          style={{ color: "#3182ce", borderColor: "#3182ce" }}
+          onClick={() => {
+            setSelectedCustomerId && setSelectedCustomerId(row.original.id);
+            navigate(`/admin/invoices?customerId=${row.original.id}`);
+          }}
+        >
+          Create Invoice
+        </Button>
+      ),
     },
   ];
 

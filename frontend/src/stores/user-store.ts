@@ -8,6 +8,8 @@ interface UserState {
   setIsAuthenticated: (value: boolean) => void;
   isLoading: boolean;
   setIsLoading: (value: boolean) => void;
+  selectedCustomerId?: string | number;
+  setSelectedCustomerId?: (id: string | number) => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -17,4 +19,6 @@ export const useUserStore = create<UserState>((set) => ({
   setIsAuthenticated: (value) => set({ isAuthenticated: value }),
   isLoading: true,
   setIsLoading: (value) => set({ isLoading: value }),
+  selectedCustomerId: undefined,
+  setSelectedCustomerId: (id) => set({ selectedCustomerId: id }),
 }));

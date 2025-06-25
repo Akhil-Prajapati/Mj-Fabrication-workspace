@@ -1,12 +1,19 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Calculator, Package } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2, Calculator, Package } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface InvoiceItem {
   id: string;
@@ -23,7 +30,7 @@ interface Customer {
   customerId: string;
   companyName: string;
   contactPerson: string;
-  gstNumber: string;  
+  gstNumber: string;
   address: string;
   state: string;
   stateCode: string;
@@ -47,6 +54,10 @@ interface InvoiceData {
 interface InvoiceFormProps {
   onSave: (invoice: InvoiceData) => void;
   onCancel: () => void;
+  customers: Customer[];
+  selectedCustomer: Customer | null;
+  setSelectedCustomer: (customer: Customer | null) => void;
+  loading: boolean;
 }
 
 // GST validation function
@@ -55,12 +66,23 @@ const validateGSTNumber = (gstNumber: string): boolean => {
   return gstRegex.test(gstNumber);
 };
 
-const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
+const InvoiceForm = ({
+  onSave,
+  onCancel,
+  customers,
+  selectedCustomer,
+  setSelectedCustomer,
+  loading,
+}: InvoiceFormProps) => {
+  console.log(customers, "Customers in InvoiceForm:");
+
+  const navigate = useNavigate();
+
   const [invoice, setInvoice] = useState<InvoiceData>({
-    invoiceNumber: `INV-${Date.now()}`,
-    orderNumber: `ORD-${Date.now()}`,
-    invoiceDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
+    invoiceNumber: `INV-`,
+    orderNumber: `ORD-`,
+    invoiceDate: new Date().toISOString().split("T")[0],
+    dueDate: "",
     customer: null,
     items: [],
     subtotal: 0,
@@ -68,96 +90,75 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
     cgst: 0,
     igst: 0,
     totalAmount: 0,
-    notes: ''
+    notes: "",
   });
 
-  const [customerType, setCustomerType] = useState<'existing' | 'new'>('existing');
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({});
-  const [gstError, setGstError] = useState('');
+  const [gstError, setGstError] = useState("");
 
   // Load inventory items from localStorage
-  const inventoryItems = JSON.parse(localStorage.getItem('inventory') || '[]');
-
-  // Sample customers
-  const sampleCustomers: Customer[] = [
-    {
-      customerId: 'CUST-001',
-      companyName: 'ABC Construction Ltd',
-      contactPerson: 'Rajesh Kumar',
-      gstNumber: '29ABCDE1234F1Z5',
-      address: '123 Industrial Area, Sector 15, Gurgaon',
-      state: 'Haryana',
-      stateCode: '06'
-    },
-    {
-      customerId: 'CUST-002',
-      companyName: 'XYZ Builders Pvt Ltd',
-      contactPerson: 'Priya Sharma',
-      gstNumber: '07FGHIJ5678K2L9',
-      address: '456 Business Park, New Delhi',
-      state: 'Delhi',
-      stateCode: '07'
-    }
-  ];
+  const inventoryItems = JSON.parse(localStorage.getItem("inventory") || "[]");
 
   // Indian states with state codes
   const indianStates = [
-    { name: 'Andhra Pradesh', code: '28' },
-    { name: 'Arunachal Pradesh', code: '12' },
-    { name: 'Assam', code: '18' },
-    { name: 'Bihar', code: '10' },
-    { name: 'Chhattisgarh', code: '22' },
-    { name: 'Delhi', code: '07' },
-    { name: 'Goa', code: '30' },
-    { name: 'Gujarat', code: '24' },
-    { name: 'Haryana', code: '06' },
-    { name: 'Himachal Pradesh', code: '02' },
-    { name: 'Jharkhand', code: '20' },
-    { name: 'Karnataka', code: '29' },
-    { name: 'Kerala', code: '32' },
-    { name: 'Madhya Pradesh', code: '23' },
-    { name: 'Maharashtra', code: '27' },
-    { name: 'Manipur', code: '14' },
-    { name: 'Meghalaya', code: '17' },
-    { name: 'Mizoram', code: '15' },
-    { name: 'Nagaland', code: '13' },
-    { name: 'Odisha', code: '21' },
-    { name: 'Punjab', code: '03' },
-    { name: 'Rajasthan', code: '08' },
-    { name: 'Sikkim', code: '11' },
-    { name: 'Tamil Nadu', code: '33' },
-    { name: 'Telangana', code: '36' },
-    { name: 'Tripura', code: '16' },
-    { name: 'Uttar Pradesh', code: '09' },
-    { name: 'Uttarakhand', code: '05' },
-    { name: 'West Bengal', code: '19' }
+    { name: "Andhra Pradesh", code: "28" },
+    { name: "Arunachal Pradesh", code: "12" },
+    { name: "Assam", code: "18" },
+    { name: "Bihar", code: "10" },
+    { name: "Chhattisgarh", code: "22" },
+    { name: "Delhi", code: "07" },
+    { name: "Goa", code: "30" },
+    { name: "Gujarat", code: "24" },
+    { name: "Haryana", code: "06" },
+    { name: "Himachal Pradesh", code: "02" },
+    { name: "Jharkhand", code: "20" },
+    { name: "Karnataka", code: "29" },
+    { name: "Kerala", code: "32" },
+    { name: "Madhya Pradesh", code: "23" },
+    { name: "Maharashtra", code: "27" },
+    { name: "Manipur", code: "14" },
+    { name: "Meghalaya", code: "17" },
+    { name: "Mizoram", code: "15" },
+    { name: "Nagaland", code: "13" },
+    { name: "Odisha", code: "21" },
+    { name: "Punjab", code: "03" },
+    { name: "Rajasthan", code: "08" },
+    { name: "Sikkim", code: "11" },
+    { name: "Tamil Nadu", code: "33" },
+    { name: "Telangana", code: "36" },
+    { name: "Tripura", code: "16" },
+    { name: "Uttar Pradesh", code: "09" },
+    { name: "Uttarakhand", code: "05" },
+    { name: "West Bengal", code: "19" },
   ];
 
-  const companyState = 'Gujarat';
-  const companyStateCode = '24';
+  const companyState = "Gujarat";
+  const companyStateCode = "24";
 
   const addItem = () => {
     const newItem: InvoiceItem = {
       id: Date.now().toString(),
-      itemName: 'Item Name',
-      hsnCode: '73089090',
+      itemName: "Item Name",
+      hsnCode: "73089090",
       quantity: 1,
-      unit: 'Pieces',
+      unit: "Pieces",
       rate: 0,
       amount: 0,
-      gstRate: 18
+      gstRate: 18,
     };
     const updatedItems = [...invoice.items, newItem];
-    setInvoice(prev => ({
+    setInvoice((prev) => ({
       ...prev,
-      items: updatedItems
+      items: updatedItems,
     }));
     // Auto-calculate when item is added
     calculateTotalsForItems(updatedItems);
   };
 
   const addFromInventory = (inventoryItemId: string) => {
-    const inventoryItem = inventoryItems.find((item: any) => item.itemId === inventoryItemId);
+    const inventoryItem = inventoryItems.find(
+      (item: any) => item.itemId === inventoryItemId
+    );
     if (inventoryItem) {
       const newItem: InvoiceItem = {
         id: Date.now().toString(),
@@ -167,44 +168,48 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
         unit: inventoryItem.unit,
         rate: inventoryItem.sellingPrice,
         amount: inventoryItem.sellingPrice,
-        gstRate: 18
+        gstRate: 18,
       };
       const updatedItems = [...invoice.items, newItem];
-      setInvoice(prev => ({
+      setInvoice((prev) => ({
         ...prev,
-        items: updatedItems
+        items: updatedItems,
       }));
       // Auto-calculate when item is added
       calculateTotalsForItems(updatedItems);
     }
   };
 
-  const updateItem = (id: string, field: keyof InvoiceItem, value: string | number) => {
-    const updatedItems = invoice.items.map(item => {
+  const updateItem = (
+    id: string,
+    field: keyof InvoiceItem,
+    value: string | number
+  ) => {
+    const updatedItems = invoice.items.map((item) => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'rate') {
+        if (field === "quantity" || field === "rate") {
           updatedItem.amount = updatedItem.quantity * updatedItem.rate;
         }
         return updatedItem;
       }
       return item;
     });
-    
-    setInvoice(prev => ({
+
+    setInvoice((prev) => ({
       ...prev,
-      items: updatedItems
+      items: updatedItems,
     }));
-    
+
     // Auto-calculate when item is updated
     calculateTotalsForItems(updatedItems);
   };
 
   const removeItem = (id: string) => {
-    const updatedItems = invoice.items.filter(item => item.id !== id);
-    setInvoice(prev => ({
+    const updatedItems = invoice.items.filter((item) => item.id !== id);
+    setInvoice((prev) => ({
       ...prev,
-      items: updatedItems
+      items: updatedItems,
     }));
     // Auto-calculate when item is removed
     calculateTotalsForItems(updatedItems);
@@ -212,15 +217,17 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
 
   const calculateTotalsForItems = (items: InvoiceItem[]) => {
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-    
-    let sgst = 0, cgst = 0, igst = 0;
-    
+
+    let sgst = 0,
+      cgst = 0,
+      igst = 0;
+
     if (invoice.customer) {
       const isInterState = invoice.customer.stateCode !== companyStateCode;
-      
-      items.forEach(item => {
+
+      items.forEach((item) => {
         const gstAmount = (item.amount * item.gstRate) / 100;
-        
+
         if (isInterState) {
           igst += gstAmount;
         } else {
@@ -229,16 +236,16 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
         }
       });
     }
-    
+
     const totalAmount = subtotal + sgst + cgst + igst;
-    
-    setInvoice(prev => ({
+
+    setInvoice((prev) => ({
       ...prev,
       subtotal,
       sgst,
       cgst,
       igst,
-      totalAmount
+      totalAmount,
     }));
   };
 
@@ -247,24 +254,26 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
   };
 
   const handleCustomerSelect = (customerId: string) => {
-    const customer = sampleCustomers.find(c => c.customerId === customerId);
+    console.log("Selected Customer ID:", customerId);
+
+    const customer = customers.find((c) => c.customerId === customerId);
     if (customer) {
-      setInvoice(prev => ({ ...prev, customer }));
-      // Recalculate totals when customer changes (affects GST calculation)
+      setInvoice((prev) => ({ ...prev, customer }));
+      setSelectedCustomer(customer);
       setTimeout(() => calculateTotalsForItems(invoice.items), 100);
     }
   };
 
   const handleGSTChange = (gstNumber: string) => {
-    setNewCustomer(prev => ({ ...prev, gstNumber }));
-    
+    setNewCustomer((prev) => ({ ...prev, gstNumber }));
+
     if (gstNumber && !validateGSTNumber(gstNumber)) {
-      setGstError('Invalid GST number format');
+      setGstError("Invalid GST number format");
     } else {
-      setGstError('');
+      setGstError("");
       if (gstNumber.length >= 2) {
         const stateCode = gstNumber.substring(0, 2);
-        setNewCustomer(prev => ({ ...prev, stateCode }));
+        setNewCustomer((prev) => ({ ...prev, stateCode }));
       }
     }
   };
@@ -274,7 +283,7 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
       toast({
         title: "Error",
         description: "Please fill all required fields with valid data",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -282,15 +291,14 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
     const customer: Customer = {
       customerId: `CUST-${Date.now()}`,
       companyName: newCustomer.companyName!,
-      contactPerson: newCustomer.contactPerson || '',
+      contactPerson: newCustomer.contactPerson || "",
       gstNumber: newCustomer.gstNumber!,
-      address: newCustomer.address || '',
-      state: newCustomer.state || '',
-      stateCode: newCustomer.stateCode || ''
+      address: newCustomer.address || "",
+      state: newCustomer.state || "",
+      stateCode: newCustomer.stateCode || "",
     };
 
-    setInvoice(prev => ({ ...prev, customer }));
-    setCustomerType('existing');
+    setInvoice((prev) => ({ ...prev, customer }));
     setNewCustomer({});
     // Recalculate totals when customer changes
     setTimeout(() => calculateTotalsForItems(invoice.items), 100);
@@ -301,16 +309,16 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
       toast({
         title: "Error",
         description: "Please select a customer",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     if (invoice.items.length === 0) {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Please add at least one item",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -318,6 +326,13 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
     calculateTotals();
     onSave(invoice);
   };
+
+  // Sync selectedCustomer and invoice.customer on mount and when changed
+  useEffect(() => {
+    if (selectedCustomer) {
+      setInvoice((prev) => ({ ...prev, customer: selectedCustomer }));
+    }
+  }, [selectedCustomer]);
 
   return (
     <div className="space-y-6">
@@ -335,7 +350,12 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
               <Input
                 id="invoiceNumber"
                 value={invoice.invoiceNumber}
-                onChange={(e) => setInvoice(prev => ({ ...prev, invoiceNumber: e.target.value }))}
+                onChange={(e) =>
+                  setInvoice((prev) => ({
+                    ...prev,
+                    invoiceNumber: e.target.value,
+                  }))
+                }
               />
             </div>
             <div>
@@ -343,7 +363,12 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
               <Input
                 id="orderNumber"
                 value={invoice.orderNumber}
-                onChange={(e) => setInvoice(prev => ({ ...prev, orderNumber: e.target.value }))}
+                onChange={(e) =>
+                  setInvoice((prev) => ({
+                    ...prev,
+                    orderNumber: e.target.value,
+                  }))
+                }
               />
             </div>
             <div>
@@ -352,7 +377,12 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
                 id="invoiceDate"
                 type="date"
                 value={invoice.invoiceDate}
-                onChange={(e) => setInvoice(prev => ({ ...prev, invoiceDate: e.target.value }))}
+                onChange={(e) =>
+                  setInvoice((prev) => ({
+                    ...prev,
+                    invoiceDate: e.target.value,
+                  }))
+                }
               />
             </div>
             <div>
@@ -361,99 +391,61 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
                 id="dueDate"
                 type="date"
                 value={invoice.dueDate}
-                onChange={(e) => setInvoice(prev => ({ ...prev, dueDate: e.target.value }))}
+                onChange={(e) =>
+                  setInvoice((prev) => ({ ...prev, dueDate: e.target.value }))
+                }
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Customer Selection */}
       <Card>
         <CardHeader>
           <CardTitle>Customer Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-4">
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Label htmlFor="customer">Select Customer</Label>
+              <Select
+                placeholder="Select a customer"
+                value={invoice.customer?.customerId || "default"}
+                onValueChange={handleCustomerSelect}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue>
+                    {invoice.customer && invoice.customer.customerId
+                      ? `${invoice.customer.companyName} - ${invoice.customer.contactPerson}`
+                      : "Select a customer"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default" disabled>
+                    Select a customer
+                  </SelectItem>
+                  {customers.map((customer) => (
+                    <SelectItem
+                      key={customer.customerId}
+                      value={customer.customerId}
+                    >
+                      {customer.companyName} - {customer.contactPerson}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button
-              variant={customerType === 'existing' ? 'default' : 'outline'}
-              onClick={() => setCustomerType('existing')}
+              type="button"
+              variant="secondary"
+              className="h-10 flex items-center gap-2 border border-primary text-primary hover:bg-primary hover:text-white transition-colors shadow-sm rounded-md px-4 py-2 font-medium"
+              onClick={() => navigate("/admin/customers?add=true")}
             >
-              Select Existing Customer
-            </Button>
-            <Button
-              variant={customerType === 'new' ? 'default' : 'outline'}
-              onClick={() => setCustomerType('new')}
-            >
-              Add New Customer
+              <Plus className="h-4 w-4" />
+              Add Customer
             </Button>
           </div>
-
-          {customerType === 'existing' ? (
-            <Select onValueChange={handleCustomerSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a customer" />
-              </SelectTrigger>
-              <SelectContent>
-                {sampleCustomers.map(customer => (
-                  <SelectItem key={customer.customerId} value={customer.customerId}>
-                    {customer.companyName} - {customer.contactPerson}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  placeholder="Company Name *"
-                  value={newCustomer.companyName || ''}
-                  onChange={(e) => setNewCustomer(prev => ({ ...prev, companyName: e.target.value }))}
-                />
-                <Input
-                  placeholder="Contact Person"
-                  value={newCustomer.contactPerson || ''}
-                  onChange={(e) => setNewCustomer(prev => ({ ...prev, contactPerson: e.target.value }))}
-                />
-                <div className="space-y-1">
-                  <Input
-                    placeholder="GST Number *"
-                    value={newCustomer.gstNumber || ''}
-                    onChange={(e) => handleGSTChange(e.target.value)}
-                    className={gstError ? 'border-red-500' : ''}
-                  />
-                  {gstError && <p className="text-red-500 text-sm">{gstError}</p>}
-                </div>
-                <Select value={newCustomer.state || ''} onValueChange={(value) => {
-                  const selectedState = indianStates.find(state => state.name === value);
-                  setNewCustomer(prev => ({ 
-                    ...prev, 
-                    state: value,
-                    stateCode: selectedState?.code || ''
-                  }));
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select State" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {indianStates.map(state => (
-                      <SelectItem key={state.code} value={state.name}>
-                        {state.name} ({state.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Textarea
-                  placeholder="Address"
-                  className="md:col-span-2"
-                  value={newCustomer.address || ''}
-                  onChange={(e) => setNewCustomer(prev => ({ ...prev, address: e.target.value }))}
-                />
-              </div>
-              <Button onClick={createNewCustomer} className="w-full">
-                Create Customer
-              </Button>
-            </div>
-          )}
 
           {invoice.customer && (
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -461,7 +453,10 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
               <p>{invoice.customer.contactPerson}</p>
               <p>{invoice.customer.address}</p>
               <p>GST: {invoice.customer.gstNumber}</p>
-              <p>Place of Supply: {invoice.customer.state} ({invoice.customer.stateCode})</p>
+              <p>
+                Place of Supply: {invoice.customer.state} (
+                {invoice.customer.stateCode})
+              </p>
             </div>
           )}
         </CardContent>
@@ -497,12 +492,17 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
         <CardContent>
           <div className="space-y-4">
             {invoice.items.map((item, index) => (
-              <div key={item.id} className="grid grid-cols-12 gap-2 items-end p-4 border rounded-lg">
+              <div
+                key={item.id}
+                className="grid grid-cols-12 gap-2 items-end p-4 border rounded-lg"
+              >
                 <div className="col-span-2">
                   <Label>Item Name</Label>
                   <Input
                     value={item.itemName}
-                    onChange={(e) => updateItem(item.id, 'itemName', e.target.value)}
+                    onChange={(e) =>
+                      updateItem(item.id, "itemName", e.target.value)
+                    }
                     placeholder="Item Name"
                   />
                 </div>
@@ -510,7 +510,9 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
                   <Label>HSN Code</Label>
                   <Input
                     value={item.hsnCode}
-                    onChange={(e) => updateItem(item.id, 'hsnCode', e.target.value)}
+                    onChange={(e) =>
+                      updateItem(item.id, "hsnCode", e.target.value)
+                    }
                     placeholder="HSN"
                   />
                 </div>
@@ -519,14 +521,25 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
                   <Input
                     type="number"
                     value={item.quantity}
-                    onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateItem(
+                        item.id,
+                        "quantity",
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     min="0"
                     step="0.01"
                   />
                 </div>
                 <div className="col-span-1">
                   <Label>Unit</Label>
-                  <Select value={item.unit} onValueChange={(value) => updateItem(item.id, 'unit', value)}>
+                  <Select
+                    value={item.unit}
+                    onValueChange={(value) =>
+                      updateItem(item.id, "unit", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -544,7 +557,13 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
                   <Input
                     type="number"
                     value={item.rate}
-                    onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateItem(
+                        item.id,
+                        "rate",
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     placeholder="0.00"
                     min="0"
                     step="0.01"
@@ -552,7 +571,12 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
                 </div>
                 <div className="col-span-1">
                   <Label>GST %</Label>
-                  <Select value={item.gstRate.toString()} onValueChange={(value) => updateItem(item.id, 'gstRate', parseFloat(value))}>
+                  <Select
+                    value={item.gstRate.toString()}
+                    onValueChange={(value) =>
+                      updateItem(item.id, "gstRate", parseFloat(value))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -590,34 +614,46 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
 
           {invoice.subtotal > 0 && (
             <div className="mt-6 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-bold text-lg mb-3">Tax Calculation Summary</h4>
+              <h4 className="font-bold text-lg mb-3">
+                Tax Calculation Summary
+              </h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span className="font-mono">₹{invoice.subtotal.toFixed(2)}</span>
+                  <span className="font-mono">
+                    ₹{invoice.subtotal.toFixed(2)}
+                  </span>
                 </div>
                 {invoice.sgst > 0 && invoice.cgst > 0 && (
                   <>
                     <div className="flex justify-between text-blue-600">
                       <span>SGST @ 9%:</span>
-                      <span className="font-mono">₹{invoice.sgst.toFixed(2)}</span>
+                      <span className="font-mono">
+                        ₹{invoice.sgst.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-blue-600">
                       <span>CGST @ 9%:</span>
-                      <span className="font-mono">₹{invoice.cgst.toFixed(2)}</span>
+                      <span className="font-mono">
+                        ₹{invoice.cgst.toFixed(2)}
+                      </span>
                     </div>
                   </>
                 )}
                 {invoice.igst > 0 && (
                   <div className="flex justify-between text-purple-600">
                     <span>IGST @ 18%:</span>
-                    <span className="font-mono">₹{invoice.igst.toFixed(2)}</span>
+                    <span className="font-mono">
+                      ₹{invoice.igst.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <hr className="my-2" />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Grand Total:</span>
-                  <span className="font-mono text-green-600">₹{invoice.totalAmount.toFixed(2)}</span>
+                  <span className="font-mono text-green-600">
+                    ₹{invoice.totalAmount.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -633,14 +669,19 @@ const InvoiceForm = ({ onSave, onCancel }: InvoiceFormProps) => {
           <Textarea
             placeholder="Terms and conditions, payment details, delivery instructions, etc."
             value={invoice.notes}
-            onChange={(e) => setInvoice(prev => ({ ...prev, notes: e.target.value }))}
+            onChange={(e) =>
+              setInvoice((prev) => ({ ...prev, notes: e.target.value }))
+            }
             className="min-h-20"
           />
         </CardContent>
       </Card>
 
       <div className="flex gap-4">
-        <Button onClick={handleSave} className="flex-1 bg-green-600 hover:bg-green-700">
+        <Button
+          onClick={handleSave}
+          className="flex-1 bg-green-600 hover:bg-green-700"
+        >
           Save Invoice
         </Button>
         <Button onClick={onCancel} variant="outline" className="flex-1">

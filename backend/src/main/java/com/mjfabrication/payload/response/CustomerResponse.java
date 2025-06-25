@@ -4,6 +4,7 @@ import com.mjfabrication.enums.CustomerType;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 @Data
 public class CustomerResponse {
@@ -18,4 +19,5 @@ public class CustomerResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String companyName;
+    private List<AddressResponse> addresses;
 }

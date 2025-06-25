@@ -27,7 +27,24 @@ public class CustomerServiceImpl implements CustomerService {
     public List<CustomerResponse> getAll() {
         return customerRepository.findAll().stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // Descending by createdAt
-                .map(c -> modelMapper.map(c, CustomerResponse.class))
+                .map(c -> {
+                    CustomerResponse resp = modelMapper.map(c, CustomerResponse.class);
+                    // Fetch addresses for this customer
+                    List<CustomerAddress> addresses = customerAddressRepository.findByCustomerId(c.getId());
+                    List<com.mjfabrication.payload.response.AddressResponse> addressResponses = addresses.stream().map(addr -> {
+                        com.mjfabrication.payload.response.AddressResponse ar = new com.mjfabrication.payload.response.AddressResponse();
+                        ar.setAddressLine1(addr.getAddressLine1());
+                        ar.setAddressLine2(addr.getAddressLine2());
+                        ar.setCity(addr.getCity());
+                        ar.setState(addr.getState());
+                        ar.setPincode(addr.getPincode());
+                        ar.setIsDefault(addr.getIsDefault());
+                        ar.setAddressType(addr.getAddressType().toString());
+                        return ar;
+                    }).collect(Collectors.toList());
+                    resp.setAddresses(addressResponses);
+                    return resp;
+                })
                 .collect(Collectors.toList());
     }
 

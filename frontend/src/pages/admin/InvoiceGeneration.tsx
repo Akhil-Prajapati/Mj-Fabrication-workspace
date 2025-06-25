@@ -5,6 +5,8 @@ import { toast } from "@/hooks/use-toast";
 import InvoiceForm from "@/components/invoices/InvoiceForm";
 import InvoiceList from "@/components/invoices/InvoiceList";
 import InvoicePreview from "@/components/invoices/InvoicePreview";
+import { fetchCustomers } from "@/api/invoice";
+import { useUserStore } from "@/stores/user-store";
 
 interface InvoiceData {
   invoiceNumber: string;
@@ -38,8 +40,31 @@ const InvoiceGeneration = () => {
     null
   );
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const selectedCustomerId = useUserStore((state) => state.selectedCustomerId);
+
+  function mapCustomer(raw) {
+    const address =
+      raw.addresses && raw.addresses.length > 0 ? raw.addresses[0] : {};
+    return {
+      customerId: raw.id,
+      companyName: raw.companyName,
+      contactPerson: raw.customerName,
+      gstNumber: raw.gstNumber,
+      address: address.addressLine1 || "",
+      state: address.state || "",
+      stateCode: raw.stateCode || "",
+    };
+  }
 
   useEffect(() => {
+    setLoading(true);
+    fetchCustomers()
+      .then((data) => setCustomers(data.map(mapCustomer)))
+      .finally(() => setLoading(false));
+
     // Load saved invoices
     const savedInvoices = localStorage.getItem("invoices");
     if (savedInvoices) {
@@ -99,6 +124,21 @@ const InvoiceGeneration = () => {
       localStorage.setItem("invoices", JSON.stringify(sampleInvoices));
     }
   }, [navigate]);
+
+  // Select customer from store if present
+  useEffect(() => {
+    if (selectedCustomerId && customers.length > 0) {
+      const found = customers.find((c) => c.customerId === selectedCustomerId);
+      if (found) setSelectedCustomer(found);
+    }
+  }, [selectedCustomerId, customers]);
+
+  // Open form by default if a customer is pre-selected from store
+  useEffect(() => {
+    if (selectedCustomerId && customers.length > 0) {
+      setShowForm(true);
+    }
+  }, [selectedCustomerId, customers]);
 
   const handleSaveInvoice = (invoiceData: InvoiceData) => {
     const newInvoice: Invoice = {
@@ -175,6 +215,10 @@ const InvoiceGeneration = () => {
         <InvoiceForm
           onSave={handleSaveInvoice}
           onCancel={() => setShowForm(false)}
+          customers={customers}
+          selectedCustomer={selectedCustomer}
+          setSelectedCustomer={setSelectedCustomer}
+          loading={loading}
         />
       ) : (
         <InvoiceList
