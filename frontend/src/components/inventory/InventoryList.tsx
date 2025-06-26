@@ -33,10 +33,16 @@ interface InventoryItem {
 interface InventoryListProps {
   items: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (itemId: string) => void;
+  onDelete: (item: InventoryItem) => void;
+  isLoading?: boolean;
 }
 
-const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
+const InventoryList = ({
+  items,
+  onEdit,
+  onDelete,
+  isLoading = false,
+}: InventoryListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
@@ -107,14 +113,21 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
               />
             </div>
 
-            <SelectItem value="all">All Categories</SelectItem>
-            {[...new Set(items.map((item) => item.category))]
-              .filter((cat) => cat && cat.trim() !== "")
-              .map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {[...new Set(items.map((item) => item.category))]
+                  .filter((cat) => cat && cat.trim() !== "")
+                  .map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
 
             <Select value={stockFilter} onValueChange={setStockFilter}>
               <SelectTrigger>
@@ -148,7 +161,11 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
       </Card>
 
       {/* Items Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${
+          isLoading ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
         {sortedItems.map((item) => {
           const stockStatus = getStockStatus(item);
           return (
@@ -169,13 +186,15 @@ const InventoryList = ({ items, onEdit, onDelete }: InventoryListProps) => {
                       size="sm"
                       variant="outline"
                       onClick={() => onEdit(item)}
+                      disabled={isLoading}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => onDelete(item.itemId)}
+                      onClick={() => onDelete(item)}
+                      disabled={isLoading}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

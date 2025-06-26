@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -11,6 +11,17 @@ import {
   updateInventoryItem,
   deleteInventoryItem,
 } from "@/api/inventory";
+import { Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InventoryItem {
   itemId: string;
@@ -36,68 +47,96 @@ const InventoryManagement = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
 
-  useEffect(() => {
-    // Load inventory from backend
-    getInventoryItems()
-      .then(setItems)
-      .catch(() => setItems([]));
-  }, [navigate]);
-
-  const handleAddItem = async (newItem: InventoryItem) => {
+  const loadInventoryItems = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const saved = await createInventoryItem(newItem);
-      setItems((prev) => [...prev, saved]);
-      setShowForm(false);
-      toast({
-        title: "Item Added",
-        description: `${saved.itemName} has been added to inventory.`,
-      });
-    } catch {
+      const data = await getInventoryItems();
+      setItems(data);
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add inventory item.",
+        description: "Failed to load inventory items. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInventoryItems();
+  }, [loadInventoryItems]);
+
+  const handleAddItem = async (newItem: InventoryItem) => {
+    setIsSubmitting(true);
+    try {
+      await createInventoryItem(newItem);
+      await loadInventoryItems(); // Refresh the list
+      setShowForm(false);
+      toast({
+        title: "Success",
+        description: `${newItem.itemName} has been added to inventory.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add inventory item. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEditItem = async (updatedItem: InventoryItem) => {
+    setIsSubmitting(true);
     try {
-      const saved = await updateInventoryItem(updatedItem.itemId, updatedItem);
-      setItems((prev) =>
-        prev.map((item) => (item.itemId === saved.itemId ? saved : item))
-      );
+      await updateInventoryItem(updatedItem.itemId, updatedItem);
+      await loadInventoryItems(); // Refresh the list
       setShowForm(false);
       setEditingItem(undefined);
       toast({
-        title: "Item Updated",
-        description: `${saved.itemName} has been updated.`,
+        title: "Success",
+        description: `${updatedItem.itemName} has been updated successfully.`,
       });
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update inventory item.",
+        description: "Failed to update inventory item. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
+  };  const handleDeleteItem = async (item: InventoryItem) => {
+    setItemToDelete(item);
   };
 
-  const handleDeleteItem = async (itemId: string) => {
-    const itemToDelete = items.find((item) => item.itemId === itemId);
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    setIsSubmitting(true);
     try {
-      await deleteInventoryItem(itemId);
-      setItems((prev) => prev.filter((item) => item.itemId !== itemId));
+      await deleteInventoryItem(itemToDelete.itemId);
+      await loadInventoryItems(); // Refresh the list
       toast({
-        title: "Item Deleted",
-        description: `${itemToDelete?.itemName} has been removed from inventory.`,
+        title: "Success",
+        description: `${itemToDelete.itemName} has been removed from inventory.`,
       });
-    } catch {
+    } catch (error) {
+      console.error('Delete error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete inventory item.",
+        description: "Failed to delete inventory item. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
+      setItemToDelete(null);
     }
   };
 
@@ -115,6 +154,14 @@ const InventoryManagement = () => {
     (item) => item.stockQuantity <= item.reorderLevel
   );
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -128,7 +175,9 @@ const InventoryManagement = () => {
           </p>
         </div>
         {!showForm && (
-          <Button onClick={() => setShowForm(true)}>Add New Item</Button>
+          <Button onClick={() => setShowForm(true)} disabled={isSubmitting}>
+            Add New Item
+          </Button>
         )}
       </div>
 
@@ -157,14 +206,47 @@ const InventoryManagement = () => {
           item={editingItem}
           onSubmit={editingItem ? handleEditItem : handleAddItem}
           onCancel={cancelForm}
+          isSubmitting={isSubmitting}
         />
       ) : (
         <InventoryList
           items={items}
           onEdit={startEdit}
           onDelete={handleDeleteItem}
+          isLoading={isSubmitting}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!itemToDelete}
+        onOpenChange={() => setItemToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {itemToDelete?.itemName} from the
+              inventory. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isSubmitting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

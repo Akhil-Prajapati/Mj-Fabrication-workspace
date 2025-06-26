@@ -54,6 +54,12 @@ public class InventoryItemServiceImpl implements InventoryItemService {
 
     @Override
     public void delete(String itemId) {
-        inventoryItemRepository.deleteById(itemId);
+        try {
+            InventoryItem item = inventoryItemRepository.findById(itemId)
+                    .orElseThrow(() -> new RuntimeException("Inventory item not found with id: " + itemId));
+            inventoryItemRepository.delete(item);
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting inventory item: " + e.getMessage());
+        }
     }
 }

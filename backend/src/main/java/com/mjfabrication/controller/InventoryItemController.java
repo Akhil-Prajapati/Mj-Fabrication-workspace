@@ -42,9 +42,13 @@ public class InventoryItemController {
     }
 
     @DeleteMapping("/{itemId}")
-    public ResponseEntity<Void> delete(@PathVariable String itemId) {
-        inventoryItemService.delete(itemId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> delete(@PathVariable("itemId") String itemId) {
+        try {
+            inventoryItemService.delete(itemId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete inventory item: " + e.getMessage());
+        }
     }
 
     // Helper method to map requestMap to InventoryItemRequest

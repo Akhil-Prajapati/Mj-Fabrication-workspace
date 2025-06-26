@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,14 +37,16 @@ interface InventoryItem {
 
 interface InventoryFormEnhancedProps {
   item?: InventoryItem;
-  onSubmit: (item: InventoryItem) => void;
+  onSubmit: (item: InventoryItem) => Promise<void>;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
 const InventoryFormEnhanced = ({
   item,
   onSubmit,
   onCancel,
+  isSubmitting = false,
 }: InventoryFormEnhancedProps) => {
   const [formData, setFormData] = useState<InventoryItem>({
     itemId: item?.itemId || `ITM-`,
@@ -179,7 +182,7 @@ const InventoryFormEnhanced = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -478,18 +481,24 @@ const InventoryFormEnhanced = ({
           </div>
 
           {/* Form Actions */}
-          <div className="flex gap-4">
-            <Button type="submit" className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              {item ? "Update Item" : "Add Item"}
-            </Button>
+          <div className="flex justify-center gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
-              className="flex-1"
+              disabled={isSubmitting}
             >
               Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {item ? "Updating..." : "Adding..."}
+                </>
+              ) : (
+                <>{item ? "Update Item" : "Add Item"}</>
+              )}
             </Button>
           </div>
         </form>

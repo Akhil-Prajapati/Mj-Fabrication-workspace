@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { login } from "@/api/fetcher";
 
 const AdminLogin = () => {
@@ -13,10 +13,13 @@ const AdminLogin = () => {
     username: "",
     password: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
       await login(credentials.username, credentials.password);
       // If no error is thrown, login is successful (cookie is set)
@@ -26,14 +29,31 @@ const AdminLogin = () => {
       });
       navigate("/admin/dashboard");
     } catch (err: any) {
-      toast({
-        title: "Login Failed",
-        description:
-          err?.response?.status === 401
-            ? "Invalid username or password"
-            : "Server error. Please try again.",
-        variant: "destructive",
-      });
+      if (err?.response?.status === 401) {
+        // Call backend logout endpoint to expire the cookie
+        fetch("/api/v1/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+        // Optionally clear local/session storage
+        localStorage.clear();
+        sessionStorage.clear();
+        toast({
+          title: "Login Failed",
+          description: "Invalid username or password. Please login again.",
+          variant: "destructive",
+        });
+        // Reload page to force re-authentication
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Server error. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,6 +71,7 @@ const AdminLogin = () => {
               size="sm"
               onClick={handleBack}
               className="flex items-center gap-2"
+              disabled={isLoading}
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -79,6 +100,7 @@ const AdminLogin = () => {
                   }))
                 }
                 className="mt-1"
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -95,10 +117,23 @@ const AdminLogin = () => {
                   }))
                 }
                 className="mt-1"
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full" size="lg">
-              Login to Admin Panel
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                "Login to Admin Panel"
+              )}
             </Button>
           </form>
         </CardContent>
