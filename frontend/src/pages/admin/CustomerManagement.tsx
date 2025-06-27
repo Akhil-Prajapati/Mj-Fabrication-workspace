@@ -3,23 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import AdminLayout from "@/components/admin/AdminLayout";
-import { Search } from "lucide-react";
 import { fetcher } from "@/api/fetcher";
 import { StateDropdown } from "@/components/state";
 import { customerSchema } from "./customerSchema";
-import { z } from "zod";
 import { NinjaTable } from "@/components/NinjaTable";
 import * as React from "react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { getStates } from "@/api/state";
 import { useUserStore } from "@/stores/user-store";
@@ -89,29 +85,20 @@ const CustomerManagement = () => {
   const [stateList, setStateList] = useState<
     { stateCode: string; stateName: string }[]
   >([]);
+  const [editFormData, setEditFormData] = useState<any>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editCustomerId, setEditCustomerId] = useState<string | number | null>(
+    null
+  );
 
   const onOpen = () => setIsOpen(true);
   const onClose = () => setIsOpen(false);
 
-  useEffect(() => {
-    // Fetch state list for code-name mapping
-    getStates().then((data) => {
-      let stateList = data;
-      if (Array.isArray(data)) {
-        stateList = data;
-      } else if (data.states && Array.isArray(data.states)) {
-        stateList = data.states;
-      } else if (data.data && Array.isArray(data.data)) {
-        stateList = data.data;
-      }
-      setStateList(stateList);
-    });
-    // Fetch customers from backend
+  // DRY: Single fetchCustomers function
+  const fetchCustomers = React.useCallback(() => {
     fetcher({ path: "/api/v1/customers" }, { method: "GET" })
       .then((data: any[]) => {
         const mapped = data.map((saved) => {
-          console.log(saved);
-
           let type: "registered" | "unregistered" = "unregistered";
           let customerType: "registered" | "unregistered" = "unregistered";
           if (
@@ -132,7 +119,7 @@ const CustomerManagement = () => {
               (saved.addresses && saved.addresses[0]?.addressLine1) ||
               "",
             type,
-            customerType, // Always set customerType
+            customerType,
             createdAt: saved.createdAt || new Date().toISOString(),
             stateCode: saved.stateCode || "",
             addresses: saved.addresses || [],
@@ -143,6 +130,23 @@ const CustomerManagement = () => {
       })
       .catch(() => setCustomers([]));
   }, []);
+
+  useEffect(() => {
+    // Fetch state list for code-name mapping
+    getStates().then((data) => {
+      let stateList = data;
+      if (Array.isArray(data)) {
+        stateList = data;
+      } else if (data.states && Array.isArray(data.states)) {
+        stateList = data.states;
+      } else if (data.data && Array.isArray(data.data)) {
+        stateList = data.data;
+      }
+      setStateList(stateList);
+    });
+    // Fetch customers from backend
+    fetchCustomers();
+  }, [fetchCustomers]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Build the object to validate
@@ -217,7 +221,8 @@ const CustomerManagement = () => {
         stateCode: saved.stateCode || "",
         addresses: saved.addresses || [],
       };
-      setCustomers((prev) => [...prev, mappedCustomer]);
+      setCustomers((prev) => [...prev, mappedCustomer]); // Optionally, just call fetchCustomers() for consistency
+      fetchCustomers(); // Refresh list after add
       toast({
         title: "Customer Added",
         description: "Customer has been successfully added to the database.",
@@ -372,17 +377,33 @@ const CustomerManagement = () => {
       Header: "Actions",
       id: "actions",
       Cell: ({ row }: any) => (
-        <Button
-          size="sm"
-          variant="outline"
-          style={{ color: "#3182ce", borderColor: "#3182ce" }}
-          onClick={() => {
-            setSelectedCustomerId && setSelectedCustomerId(row.original.id);
-            navigate(`/admin/invoices?customerId=${row.original.id}`);
-          }}
-        >
-          Create Invoice
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            style={{ color: "#3182ce", borderColor: "#3182ce" }}
+            onClick={() => {
+              setSelectedCustomerId && setSelectedCustomerId(row.original.id);
+              navigate(`/admin/invoices?customerId=${row.original.id}`);
+            }}
+          >
+            Create Invoice
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => openEditDialog(row.original)}
+          >
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => handleDeleteCustomer(row.original.id)}
+          >
+            Delete
+          </Button>
+        </div>
       ),
     },
   ];
@@ -397,6 +418,76 @@ const CustomerManagement = () => {
     "CORPORATE",
   ] as const;
   type CustomerTypeOption = (typeof customerTypeOptions)[number];
+
+  const openEditDialog = (customer: Customer) => {
+    setEditFormData({ ...customer });
+    setEditCustomerId(customer.id);
+    setIsEditOpen(true);
+  };
+  const closeEditDialog = () => {
+    setIsEditOpen(false);
+    setEditFormData(null);
+    setEditCustomerId(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // Ensure all address fields are present and addressType is set
+      const updatedAddresses = (editFormData.addresses || []).map(
+        (addr: any) => ({
+          addressLine1: addr.addressLine1 || "",
+          addressLine2: addr.addressLine2 || "",
+          city: addr.city || "",
+          state: addr.state || "",
+          pincode: addr.pincode || "",
+          isDefault: !!addr.isDefault,
+          addressType: addr.addressType || "BILLING",
+        })
+      );
+      const payload = {
+        ...editFormData,
+        addresses: updatedAddresses,
+      };
+      const updated = await fetcher(
+        { path: `/api/v1/customers/${editCustomerId}` },
+        { method: "PUT", json: payload }
+      );
+      toast({
+        title: "Customer Updated",
+        description: "Customer details updated.",
+      });
+      closeEditDialog();
+      // Refresh customer list
+      fetchCustomers();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update customer.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCustomer = async (id: string | number) => {
+    if (!window.confirm("Are you sure you want to delete this customer?"))
+      return;
+    try {
+      await fetcher({ path: `/api/v1/customers/${id}` }, { method: "DELETE" });
+      toast({
+        title: "Customer Deleted",
+        description: "Customer has been deleted.",
+      });
+      // Refresh customer list
+      fetchCustomers();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete customer.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -679,181 +770,407 @@ const CustomerManagement = () => {
         open={isOpen}
         onOpenChange={(open) => (open ? onOpen() : onClose())}
       >
-        <DialogTrigger asChild>
-          {/* No trigger here, modal is opened by state */}
-        </DialogTrigger>
-        <DialogContent>
-          <DialogTitle>Customer Details</DialogTitle>
-          {/* Only one close button, styled top-right */}
-          <DialogClose asChild>
-            {/* <button
-              onClick={onClose}
-              className="absolute top-2 right-2 text-2xl text-gray-400 hover:text-gray-700 transition"
-            >
-              ×
-            </button> */}
-          </DialogClose>
-          <DialogDescription>
+        <DialogContent className="max-w-4xl w-full  overflow-y-auto">
+          <div className="sticky top-0 bg-white pb-4 ">
+            <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">
+              Customer Details
+            </DialogTitle>
+            {/* <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose> */}
+          </div>
+
+          <DialogDescription className="mt-4">
             {selectedCustomer && (
-              <div className="space-y-4 p-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h3 className="font-bold text-blue-700 mb-2 text-lg">
-                      Basic Info
-                    </h3>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">Name:</span>{" "}
-                      <span className="text-gray-900">
-                        {selectedCustomer.customerName}
-                      </span>
+              <div className="space-y-6">
+                {/* Basic Information Card */}
+                <Card className="border-blue-200">
+                  <CardHeader className="bg-blue-50 border-b border-blue-200">
+                    <CardTitle className="text-xl font-semibold text-blue-800">
+                      Basic Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-4 p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Customer Name
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {selectedCustomer.customerName}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Company Name
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {selectedCustomer.companyName || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Email
+                        </label>
+                        <p className="text-lg text-blue-600">
+                          {selectedCustomer.email}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Phone
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {selectedCustomer.phone}
+                        </p>
+                      </div>
                     </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        Company Name:
-                      </span>{" "}
-                      <span className="text-gray-900">
-                        {selectedCustomer.companyName}
-                      </span>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          GST Number
+                        </label>
+                        <p className="text-lg text-blue-600 font-mono">
+                          {selectedCustomer.gstNumber || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Customer Type
+                        </label>
+                        <p className="text-lg text-gray-900 capitalize">
+                          {selectedCustomer.type}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          State Code
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {stateList.find(
+                            (s) => s.stateCode === selectedCustomer.stateCode
+                          )?.stateName || selectedCustomer.stateCode}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Created At
+                        </label>
+                        <p className="text-lg text-gray-900">
+                          {new Date(
+                            selectedCustomer.createdAt
+                          ).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
                     </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        Email:
-                      </span>{" "}
-                      <span className="text-gray-900">
-                        {selectedCustomer.email}
-                      </span>
-                    </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        Phone:
-                      </span>{" "}
-                      <span className="text-gray-900">
-                        {selectedCustomer.phone}
-                      </span>
-                    </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        GST Number:
-                      </span>{" "}
-                      <span className="text-blue-700 underline underline-offset-2">
-                        {selectedCustomer.gstNumber}
-                      </span>
-                    </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">Type:</span>{" "}
-                      <span className="text-gray-900 capitalize">
-                        {selectedCustomer.type}
-                      </span>
-                    </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        State Code:
-                      </span>{" "}
-                      <span className="text-gray-900">
-                        {selectedCustomer.stateCode}
-                      </span>
-                    </div>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        Created At:
-                      </span>{" "}
-                      <span className="text-gray-900">
-                        {new Date(selectedCustomer.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <h3 className="font-bold text-green-700 mb-2 text-lg">
-                      Primary Address
-                    </h3>
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-700">
-                        Address:
-                      </span>{" "}
-                      <span className="text-gray-900">
-                        {selectedCustomer.address}
-                      </span>
-                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Addresses Card */}
+                <Card className="border-green-200">
+                  <CardHeader className="bg-green-50 border-b border-green-200">
+                    <CardTitle className="text-xl font-semibold text-green-800">
+                      Address Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
                     {selectedCustomer.addresses &&
-                      selectedCustomer.addresses.length > 0 && (
-                        <div className="mt-2">
-                          <h4 className="font-semibold text-green-600 mb-1">
-                            All Addresses:
-                          </h4>
-                          <ul className="space-y-2">
-                            {selectedCustomer.addresses.map((addr, idx) => (
-                              <li
-                                key={idx}
-                                className="bg-white rounded border p-3"
-                              >
-                                <div className="mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    Type:
-                                  </span>{" "}
-                                  <span className="text-gray-900">
-                                    {addr.addressType}
-                                  </span>
-                                </div>
-                                <div className="mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    Line 1:
-                                  </span>{" "}
-                                  <span className="text-gray-900">
-                                    {addr.addressLine1}
-                                  </span>
-                                </div>
-                                {addr.addressLine2 && (
-                                  <div className="mb-1">
-                                    <span className="font-semibold text-gray-700">
-                                      Line 2:
-                                    </span>{" "}
-                                    <span className="text-gray-900">
-                                      {addr.addressLine2}
-                                    </span>
-                                  </div>
+                    selectedCustomer.addresses.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {selectedCustomer.addresses.map((addr, idx) => (
+                          <Card key={idx} className="border-gray-200 shadow-sm">
+                            <CardHeader className="bg-gray-50 py-3">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg font-medium text-gray-900">
+                                  {addr.addressType} Address
+                                </CardTitle>
+                                {addr.isDefault && (
+                                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                                    Default
+                                  </Badge>
                                 )}
-                                <div className="mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    City:
-                                  </span>{" "}
-                                  <span className="text-gray-900">
-                                    {addr.city}
-                                  </span>
-                                </div>
-                                <div className="mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    State:
-                                  </span>{" "}
-                                  <span className="text-gray-900">
-                                    {addr.state}
-                                  </span>
-                                </div>
-                                <div className="mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    Pincode:
-                                  </span>{" "}
-                                  <span className="text-gray-900">
-                                    {addr.pincode}
-                                  </span>
-                                </div>
-                                <div className="mb-1">
-                                  <span className="font-semibold text-gray-700">
-                                    Default:
-                                  </span>{" "}
-                                  <span className="text-gray-900">
-                                    {addr.isDefault ? "Yes" : "No"}
-                                  </span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                  </div>
-                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-2">
+                              <p className="text-gray-800">
+                                {addr.addressLine1}
+                              </p>
+                              {addr.addressLine2 && (
+                                <p className="text-gray-800">
+                                  {addr.addressLine2}
+                                </p>
+                              )}
+                              <p className="text-gray-800">
+                                {addr.city}, {addr.state} - {addr.pincode}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        No addresses found
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             )}
           </DialogDescription>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Customer Dialog */}
+      <Dialog
+        open={isEditOpen}
+        onOpenChange={(open) =>
+          open ? setIsEditOpen(true) : closeEditDialog()
+        }
+      >
+        <DialogContent className="max-w-2xl w-full">
+          <DialogTitle>Edit Customer</DialogTitle>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editCustomerName">Customer Name *</Label>
+                <Input
+                  id="editCustomerName"
+                  type="text"
+                  required
+                  value={editFormData?.customerName || ""}
+                  onChange={(e) =>
+                    setEditFormData((prev: any) => ({
+                      ...prev,
+                      customerName: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="editCompanyName">Company Name</Label>
+                <Input
+                  id="editCompanyName"
+                  type="text"
+                  required
+                  value={editFormData?.companyName || ""}
+                  onChange={(e) =>
+                    setEditFormData((prev: any) => ({
+                      ...prev,
+                      companyName: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="editPhone">Phone Number *</Label>
+                <Input
+                  id="editPhone"
+                  type="tel"
+                  required
+                  value={editFormData?.phone || ""}
+                  onChange={(e) =>
+                    setEditFormData((prev: any) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="editEmail">Email Address *</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  required
+                  value={editFormData?.email || ""}
+                  onChange={(e) =>
+                    setEditFormData((prev: any) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="editGstNumber">GST Number</Label>
+              <Input
+                id="editGstNumber"
+                type="text"
+                value={editFormData?.gstNumber || ""}
+                onChange={(e) =>
+                  setEditFormData((prev: any) => ({
+                    ...prev,
+                    gstNumber: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="editStateCode">State</Label>
+              <StateDropdown
+                value={editFormData?.stateCode || ""}
+                onChange={(val) =>
+                  setEditFormData((prev: any) => ({ ...prev, stateCode: val }))
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="editCustomerType">Customer Type</Label>
+              <select
+                id="editCustomerType"
+                value={editFormData?.customerType || ""}
+                onChange={(e) =>
+                  setEditFormData((prev: any) => ({
+                    ...prev,
+                    customerType: e.target.value,
+                  }))
+                }
+                className="block w-full border rounded px-2 py-1"
+                required
+              >
+                {customerTypeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {type.charAt(0) + type.slice(1).toLowerCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Address editing fields */}
+            <div className="mt-4">
+              <Label>Addresses</Label>
+              {Array.isArray(editFormData?.addresses) &&
+              editFormData.addresses.length > 0 ? (
+                editFormData.addresses.map((addr: any, idx: number) => (
+                  <div key={idx} className="border rounded p-3 mb-2 bg-gray-50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <Label>Address Line 1</Label>
+                        <Input
+                          type="text"
+                          value={addr.addressLine1 || ""}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].addressLine1 = e.target.value;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Address Line 2</Label>
+                        <Input
+                          type="text"
+                          value={addr.addressLine2 || ""}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].addressLine2 = e.target.value;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>City</Label>
+                        <Input
+                          type="text"
+                          value={addr.city || ""}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].city = e.target.value;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>State</Label>
+                        <Input
+                          type="text"
+                          value={addr.state || ""}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].state = e.target.value;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Pincode</Label>
+                        <Input
+                          type="text"
+                          value={addr.pincode || ""}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].pincode = e.target.value;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Address Type</Label>
+                        <select
+                          value={addr.addressType || "BILLING"}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].addressType = e.target.value;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                          className="block w-full border rounded px-2 py-1"
+                        >
+                          <option value="BILLING">Billing</option>
+                          <option value="SHIPPING">Shipping</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="checkbox"
+                          checked={!!addr.isDefault}
+                          onChange={(e) =>
+                            setEditFormData((prev: any) => {
+                              const updated = [...prev.addresses];
+                              updated[idx].isDefault = e.target.checked;
+                              return { ...prev, addresses: updated };
+                            })
+                          }
+                        />
+                        <Label>Default</Label>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-500">No addresses found</div>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeEditDialog}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

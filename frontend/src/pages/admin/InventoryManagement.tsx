@@ -112,13 +112,14 @@ const InventoryManagement = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };  const handleDeleteItem = async (item: InventoryItem) => {
+  };
+  const handleDeleteItem = async (item: InventoryItem) => {
     setItemToDelete(item);
   };
 
   const confirmDelete = async () => {
     if (!itemToDelete) return;
-    
+
     setIsSubmitting(true);
     try {
       await deleteInventoryItem(itemToDelete.itemId);
@@ -128,7 +129,7 @@ const InventoryManagement = () => {
         description: `${itemToDelete.itemName} has been removed from inventory.`,
       });
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error("Delete error:", error);
       toast({
         title: "Error",
         description: "Failed to delete inventory item. Please try again.",

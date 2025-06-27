@@ -40,6 +40,7 @@ public class CustomerController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CustomerResponse> update(@PathVariable UUID id, @Valid @RequestBody CustomerRequest request) {
+        System.out.println(id+"idssssssss");
         return ResponseEntity.ok(customerService.update(id, request));
     }
 
