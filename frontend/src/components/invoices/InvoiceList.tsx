@@ -1,19 +1,28 @@
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { FileText, Download, Eye, Search, Filter } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { FileText, Download, Eye, Search, Filter } from "lucide-react";
+import { fetchInvoices } from "@/api/invoice-list";
 
 interface Invoice {
+  id: string; // UUID from backend
   invoiceNumber: string;
   invoiceDate: string;
   customerName: string;
   totalAmount: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  status: "draft" | "sent" | "paid" | "overdue";
   dueDate: string;
+  fullData?: any;
 }
 
 interface InvoiceListProps {
@@ -22,29 +31,60 @@ interface InvoiceListProps {
   onDownload: (invoice: Invoice) => void;
 }
 
-const InvoiceList = ({ invoices, onView, onDownload }: InvoiceListProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+const InvoiceList = ({
+  invoices: initialInvoices = [],
+  onView,
+  onDownload,
+}: InvoiceListProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
+  const [loading, setLoading] = useState(false);
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+  useEffect(() => {
+    setLoading(true);
+    fetchInvoices()
+      .then((data) => {
+        if (Array.isArray(data)) setInvoices(data);
+        else if (Array.isArray(data?.invoices)) setInvoices(data.invoices);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredInvoices = invoices.filter((invoice) => {
+    const matchesSearch =
+      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "sent":
+        return "bg-blue-100 text-blue-800";
+      case "overdue":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-  const paidAmount = filteredInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.totalAmount, 0);
+  const totalAmount = filteredInvoices.reduce(
+    (sum, inv) => sum + inv.totalAmount,
+    0
+  );
+  const paidAmount = filteredInvoices
+    .filter((inv) => inv.status === "paid")
+    .reduce((sum, inv) => sum + inv.totalAmount, 0);
   const pendingAmount = totalAmount - paidAmount;
+
+  if (loading) {
+    return <div className="p-8 text-center text-lg">Loading invoices...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -52,19 +92,25 @@ const InvoiceList = ({ invoices, onView, onDownload }: InvoiceListProps) => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">₹{totalAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ₹{totalAmount.toLocaleString()}
+            </div>
             <p className="text-sm text-muted-foreground">Total Invoiced</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">₹{paidAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">
+              ₹{paidAmount.toLocaleString()}
+            </div>
             <p className="text-sm text-muted-foreground">Amount Paid</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-orange-600">₹{pendingAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              ₹{pendingAmount.toLocaleString()}
+            </div>
             <p className="text-sm text-muted-foreground">Amount Pending</p>
           </CardContent>
         </Card>
@@ -97,36 +143,36 @@ const InvoiceList = ({ invoices, onView, onDownload }: InvoiceListProps) => {
             </div>
             <div className="flex gap-2">
               <Button
-                variant={statusFilter === 'all' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('all')}
+                variant={statusFilter === "all" ? "default" : "outline"}
+                onClick={() => setStatusFilter("all")}
                 size="sm"
               >
                 All
               </Button>
               <Button
-                variant={statusFilter === 'draft' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('draft')}
+                variant={statusFilter === "draft" ? "default" : "outline"}
+                onClick={() => setStatusFilter("draft")}
                 size="sm"
               >
                 Draft
               </Button>
               <Button
-                variant={statusFilter === 'sent' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('sent')}
+                variant={statusFilter === "sent" ? "default" : "outline"}
+                onClick={() => setStatusFilter("sent")}
                 size="sm"
               >
                 Sent
               </Button>
               <Button
-                variant={statusFilter === 'paid' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('paid')}
+                variant={statusFilter === "paid" ? "default" : "outline"}
+                onClick={() => setStatusFilter("paid")}
                 size="sm"
               >
                 Paid
               </Button>
               <Button
-                variant={statusFilter === 'overdue' ? 'default' : 'outline'}
-                onClick={() => setStatusFilter('overdue')}
+                variant={statusFilter === "overdue" ? "default" : "outline"}
+                onClick={() => setStatusFilter("overdue")}
                 size="sm"
               >
                 Overdue
@@ -149,14 +195,21 @@ const InvoiceList = ({ invoices, onView, onDownload }: InvoiceListProps) => {
             <TableBody>
               {filteredInvoices.map((invoice) => (
                 <TableRow key={invoice.invoiceNumber}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                  <TableCell className="font-medium">
+                    {invoice.invoiceNumber}
+                  </TableCell>
                   <TableCell>{invoice.customerName}</TableCell>
-                  <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {new Date(invoice.invoiceDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(invoice.dueDate).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>₹{invoice.totalAmount.toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(invoice.status)}>
-                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                      {invoice.status.charAt(0).toUpperCase() +
+                        invoice.status.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell>

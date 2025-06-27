@@ -22,4 +22,5 @@ public class InventoryItemResponse {
     private double gstRate;
     private LocalDateTime createdDate;
     private LocalDateTime lastModified;
+    private String productId; // UUID of the product
 }

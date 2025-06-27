@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class InvoiceRequest {
@@ -29,4 +30,8 @@ public class InvoiceRequest {
     private LocalDate dueDate;
     private String paymentTerms;
     private String status;
+    @NotNull
+    private BigDecimal adjustment;
+    private String notes;
+    private List<InvoiceItemRequest> items;
 }

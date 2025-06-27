@@ -5,7 +5,9 @@ import { toast } from "@/hooks/use-toast";
 import InvoiceForm from "@/components/invoices/InvoiceForm";
 import InvoiceList from "@/components/invoices/InvoiceList";
 import InvoicePreview from "@/components/invoices/InvoicePreview";
-import { fetchCustomers } from "@/api/invoice";
+import { fetchCustomers, createInvoice } from "@/api/invoice";
+import { fetchInvoiceById } from "@/api/invoice-details";
+import { getInventoryItems } from "@/api/inventory";
 import { useUserStore } from "@/stores/user-store";
 
 interface InvoiceData {
@@ -20,9 +22,11 @@ interface InvoiceData {
   igst: number;
   totalAmount: number;
   notes: string;
+  adjustment?: number; // Optional adjustment field
 }
 
 interface Invoice {
+  id: string; // UUID from backend
   invoiceNumber: string;
   invoiceDate: string;
   customerName: string;
@@ -73,6 +77,7 @@ const InvoiceGeneration = () => {
       // Sample data with enhanced structure
       const sampleInvoices: Invoice[] = [
         {
+          id: "1",
           invoiceNumber: "INV-001",
           invoiceDate: "2024-01-15",
           customerName: "ABC Construction Ltd",
@@ -112,6 +117,7 @@ const InvoiceGeneration = () => {
           },
         },
         {
+          id: "2",
           invoiceNumber: "INV-002",
           invoiceDate: "2024-01-20",
           customerName: "XYZ Builders Pvt Ltd",
@@ -140,38 +146,244 @@ const InvoiceGeneration = () => {
     }
   }, [selectedCustomerId, customers]);
 
-  const handleSaveInvoice = (invoiceData: InvoiceData) => {
-    const newInvoice: Invoice = {
-      invoiceNumber: invoiceData.invoiceNumber,
-      invoiceDate: invoiceData.invoiceDate,
-      customerName: invoiceData.customer?.companyName || "Unknown Customer",
-      totalAmount: invoiceData.totalAmount,
-      status: "draft",
-      dueDate: invoiceData.dueDate,
-      fullData: invoiceData,
-    };
-
-    const updatedInvoices = [...invoices, newInvoice];
-    setInvoices(updatedInvoices);
-    localStorage.setItem("invoices", JSON.stringify(updatedInvoices));
-    setShowForm(false);
-
-    toast({
-      title: "Invoice Created",
-      description: `Invoice ${newInvoice.invoiceNumber} has been created successfully.`,
-    });
+  const handleSaveInvoice = async (invoiceData: InvoiceData) => {
+    try {
+      // Map frontend items to backend InvoiceItemRequest
+      const items = (invoiceData.items || []).map((item) => {
+        return {
+          itemId: item.itemId || item.id || undefined, // use itemId for backend
+          quantity: item.quantity,
+          unitPrice: item.rate,
+          gstRate: item.gstRate,
+          totalPrice: item.amount,
+          hsnCode: item.hsnCode,
+          description: item.itemName,
+        };
+      });
+      // Prepare payload for backend
+      const payload = {
+        invoiceNumber: invoiceData.invoiceNumber,
+        invoiceDate: invoiceData.invoiceDate,
+        dueDate: invoiceData.dueDate,
+        customerId: invoiceData.customer?.customerId,
+        subtotal: invoiceData.subtotal,
+        cgstAmount: invoiceData.cgst,
+        sgstAmount: invoiceData.sgst,
+        igstAmount: invoiceData.igst,
+        totalAmount: invoiceData.totalAmount,
+        adjustment: invoiceData.adjustment ?? 0,
+        notes: invoiceData.notes,
+        status: "draft",
+        paymentTerms: "",
+        items,
+      };
+      console.log("Saving invoice with payload:", payload);
+      await createInvoice(payload);
+      setShowForm(false);
+      toast({
+        title: "Invoice Created",
+        description: `Invoice ${invoiceData.invoiceNumber} has been created successfully and saved to backend.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save invoice to backend.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleViewInvoice = (invoice: Invoice) => {
+  // Helper to fetch customer by ID
+  async function fetchCustomerById(customerId, customers) {
+    if (!customers || customers.length === 0) {
+      const all = await fetchCustomers();
+      return all.find(
+        (c) => c.id === customerId || c.customerId === customerId
+      );
+    }
+    return customers.find(
+      (c) => c.id === customerId || c.customerId === customerId
+    );
+  }
+
+  // Helper to fetch items for an invoice (if not included in invoice)
+  async function fetchInvoiceItems(invoice) {
+    // If invoice.items is present and array, return as is
+    if (Array.isArray(invoice.items) && invoice.items.length > 0)
+      return invoice.items;
+    // Otherwise, try to fetch all inventory items and filter by invoiceId if needed
+    // (You may want to replace this with a dedicated endpoint if available)
+    return [];
+  }
+
+  // Utility: Convert number to words (simple, for rupees)
+  function numberToWords(num) {
+    if (typeof num !== "number" || isNaN(num)) return "-";
+    const a = [
+      "",
+      "One",
+      "Two",
+      "Three",
+      "Four",
+      "Five",
+      "Six",
+      "Seven",
+      "Eight",
+      "Nine",
+      "Ten",
+      "Eleven",
+      "Twelve",
+      "Thirteen",
+      "Fourteen",
+      "Fifteen",
+      "Sixteen",
+      "Seventeen",
+      "Eighteen",
+      "Nineteen",
+    ];
+    const b = [
+      "",
+      "",
+      "Twenty",
+      "Thirty",
+      "Forty",
+      "Fifty",
+      "Sixty",
+      "Seventy",
+      "Eighty",
+      "Ninety",
+    ];
+    function inWords(n) {
+      if (n < 20) return a[n];
+      if (n < 100)
+        return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
+      if (n < 1000)
+        return (
+          a[Math.floor(n / 100)] +
+          " Hundred" +
+          (n % 100 ? " and " + inWords(n % 100) : "")
+        );
+      if (n < 100000)
+        return (
+          inWords(Math.floor(n / 1000)) +
+          " Thousand" +
+          (n % 1000 ? " " + inWords(n % 1000) : "")
+        );
+      if (n < 10000000)
+        return (
+          inWords(Math.floor(n / 100000)) +
+          " Lakh" +
+          (n % 100000 ? " " + inWords(n % 100000) : "")
+        );
+      return n.toString();
+    }
+    return inWords(Math.floor(num)) + " Rupees Only";
+  }
+
+  // Map backend invoice + customer + items to InvoicePreviewData
+  function mapInvoiceResponseToPreviewData(invoice, customer, items) {
+    console.log(items, "Items in preview mapping");
+
+    return {
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceDate: invoice.invoiceDate,
+      dueDate: invoice.dueDate,
+      customer: customer
+        ? {
+            customerId: customer.customerId || customer.id,
+            companyName: customer.companyName,
+            contactPerson: customer.contactPerson || customer.customerName,
+            gstNumber: customer.gstNumber,
+            address:
+              customer.address || (customer.addresses?.[0]?.addressLine1 ?? ""),
+            state: customer.state || (customer.addresses?.[0]?.state ?? ""),
+            stateCode:
+              customer.stateCode || (customer.addresses?.[0]?.stateCode ?? ""),
+          }
+        : {
+            customerId: "",
+            companyName: "",
+            contactPerson: "",
+            gstNumber: "",
+            address: "",
+            state: "",
+            stateCode: "",
+          },
+      items:
+        Array.isArray(items) && items.length > 0
+          ? items.map((item) => ({
+              id: item.id || item.itemId || "",
+              itemName: item.itemName || item.description || "",
+              hsnCode: item.hsnCode || "",
+              quantity:
+                typeof item.quantity === "object" &&
+                item.quantity !== null &&
+                "toNumber" in item.quantity
+                  ? item.quantity.toNumber()
+                  : Number(item.quantity) || 0,
+              unit: item.unit || "",
+              rate:
+                typeof item.unitPrice === "object" &&
+                item.unitPrice !== null &&
+                "toNumber" in item.unitPrice
+                  ? item.unitPrice.toNumber()
+                  : Number(item.unitPrice) || 0,
+              amount:
+                typeof item.totalPrice === "object" &&
+                item.totalPrice !== null &&
+                "toNumber" in item.totalPrice
+                  ? item.totalPrice.toNumber()
+                  : Number(item.totalPrice) || 0,
+            }))
+          : [],
+      subtotal: Number(invoice.subtotal) || 0,
+      sgst: Number(invoice.sgstAmount ?? invoice.sgst ?? 0),
+      cgst: Number(invoice.cgstAmount ?? invoice.cgst ?? 0),
+      igst: Number(invoice.igstAmount ?? invoice.igst ?? 0),
+      totalAmount: Number(invoice.totalAmount) || 0,
+      notes: invoice.notes || "",
+      adjustment:
+        typeof invoice.adjustment === "number"
+          ? invoice.adjustment
+          : Number(invoice.adjustment) || 0,
+      amountInWords: numberToWords(Number(invoice.totalAmount) || 0),
+    };
+  }
+
+  const handleViewInvoice = async (invoice: Invoice) => {
+    console.log("Viewing invoice:", invoice);
+
     if (invoice.fullData) {
       setPreviewInvoice(invoice.fullData);
       setShowPreview(true);
     } else {
-      toast({
-        title: "Preview Not Available",
-        description: "Complete invoice data not available for preview.",
-        variant: "destructive",
-      });
+      // Try to fetch full invoice details from backend
+      try {
+        const data = await fetchInvoiceById(invoice?.id);
+        // Fetch customer and items if needed
+        console.log("Fetched invoice data:", data);
+
+        const customer = await fetchCustomerById(data.customerId, customers);
+        let items = [];
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          items = data.items;
+        } else {
+          items = await fetchInvoiceItems(data);
+        }
+        const previewData = mapInvoiceResponseToPreviewData(
+          data,
+          customer,
+          items
+        );
+        setPreviewInvoice(previewData);
+        setShowPreview(true);
+      } catch (err) {
+        toast({
+          title: "Preview Not Available",
+          description: "Complete invoice data not available for preview.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

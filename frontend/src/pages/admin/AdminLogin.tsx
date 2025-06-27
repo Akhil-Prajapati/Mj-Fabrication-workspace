@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,6 +70,17 @@ const AdminLogin = () => {
   const handleBack = () => {
     navigate("/");
   };
+
+  useEffect(() => {
+    const handleUnload = () => {
+      // Fire and forget logout request
+      navigator.sendBeacon && navigator.sendBeacon("/api/v1/auth/logout");
+      localStorage.clear();
+      sessionStorage.clear();
+    };
+    window.addEventListener("unload", handleUnload);
+    return () => window.removeEventListener("unload", handleUnload);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">

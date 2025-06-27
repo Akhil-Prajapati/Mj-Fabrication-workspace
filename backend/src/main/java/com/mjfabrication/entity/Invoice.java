@@ -66,4 +66,10 @@ public class Invoice {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "adjustment", nullable = false)
+    private BigDecimal adjustment;
+
+    @Column(name = "notes", columnDefinition = "text")
+    private String notes;
 }

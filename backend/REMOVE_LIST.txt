@@ -1,0 +1,10 @@
+Remove the following files as part of removing Product and ProductCategory:
+
+- src/main/java/com/mjfabrication/entity/Product.java
+- src/main/java/com/mjfabrication/entity/ProductCategory.java
+- src/main/java/com/mjfabrication/repository/ProductRepository.java
+- src/main/java/com/mjfabrication/controller/ProductController.java
+- src/main/java/com/mjfabrication/service/ProductService.java
+- src/main/java/com/mjfabrication/service/impl/ProductServiceImpl.java
+- src/main/java/com/mjfabrication/payload/request/ProductRequest.java
+- src/main/java/com/mjfabrication/payload/response/ProductResponse.java

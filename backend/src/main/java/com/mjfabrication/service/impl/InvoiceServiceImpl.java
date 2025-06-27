@@ -1,13 +1,25 @@
 package com.mjfabrication.service.impl;
 
 import com.mjfabrication.entity.Invoice;
+import com.mjfabrication.entity.InvoiceItem;
+import com.mjfabrication.entity.Customer;
+import com.mjfabrication.entity.Quotation;
+import com.mjfabrication.entity.InvoiceSequence;
+import com.mjfabrication.enums.InvoiceStatus;
+import com.mjfabrication.payload.request.InvoiceItemRequest;
 import com.mjfabrication.payload.request.InvoiceRequest;
+import com.mjfabrication.payload.response.InvoiceItemResponse;
 import com.mjfabrication.payload.response.InvoiceResponse;
+import com.mjfabrication.repository.InvoiceItemRepository;
 import com.mjfabrication.repository.InvoiceRepository;
+import com.mjfabrication.repository.CustomerRepository;
+import com.mjfabrication.repository.QuotationRepository;
+import com.mjfabrication.repository.InvoiceSequenceRepository;
 import com.mjfabrication.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,6 +30,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceRepository invoiceRepository;
+    private final InvoiceItemRepository invoiceItemRepository;
+    private final CustomerRepository customerRepository;
+    private final QuotationRepository quotationRepository;
+    private final InvoiceSequenceRepository invoiceSequenceRepository;
     private final ModelMapper modelMapper;
 
     @Override
@@ -31,16 +47,127 @@ public class InvoiceServiceImpl implements InvoiceService {
     public InvoiceResponse getById(UUID id) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        return modelMapper.map(invoice, InvoiceResponse.class);
+        InvoiceResponse response = modelMapper.map(invoice, InvoiceResponse.class);
+
+        // Fetch and set items for this invoice
+        List<InvoiceItemResponse> itemResponses = invoiceItemRepository.findAll().stream()
+            .filter(i -> i.getInvoice().getId().equals(invoice.getId()))
+            .map(i -> modelMapper.map(i, InvoiceItemResponse.class))
+            .collect(Collectors.toList());
+        response.setItems(itemResponses);
+
+        return response;
     }
 
     @Override
+    @Transactional
     public InvoiceResponse create(InvoiceRequest request) {
-        Invoice invoice = modelMapper.map(request, Invoice.class);
+        // Only map allowed fields, not id/customerId/quotationId
+        Invoice invoice = new Invoice();
+        invoice.setSubtotal(request.getSubtotal());
+        invoice.setCgstAmount(request.getCgstAmount());
+        invoice.setSgstAmount(request.getSgstAmount());
+        invoice.setIgstAmount(request.getIgstAmount());
+        invoice.setTotalAmount(request.getTotalAmount());
+        invoice.setPaymentTerms(request.getPaymentTerms());
+        invoice.setStatus(request.getStatus() != null ? InvoiceStatus.valueOf(request.getStatus().toUpperCase()) : InvoiceStatus.DRAFT);
+        invoice.setAdjustment(request.getAdjustment());
+        invoice.setNotes(request.getNotes());
+        // Generate invoice number if not provided
+        String prefix = "INV";
+        String fy = getCurrentFinancialYear();
+        boolean generatedInvoiceNumber = false;
+        if (request.getInvoiceNumber() == null || request.getInvoiceNumber().isEmpty() || request.getInvoiceNumber().equals("INV-")) {
+            InvoiceSequence seq = invoiceSequenceRepository.findByPrefixAndFinancialYear(prefix, fy)
+                .orElseGet(() -> {
+                    InvoiceSequence s = new InvoiceSequence();
+                    s.setPrefix(prefix);
+                    s.setFinancialYear(fy);
+                    s.setCurrentNumber(0);
+                    s.setCreatedAt(LocalDateTime.now());
+                    s.setUpdatedAt(LocalDateTime.now());
+                    return invoiceSequenceRepository.save(s);
+                });
+            int nextNum = seq.getCurrentNumber() + 1;
+            seq.setCurrentNumber(nextNum);
+            seq.setUpdatedAt(LocalDateTime.now());
+            invoiceSequenceRepository.save(seq);
+            String invoiceNumber = String.format("%s-%s-%04d", prefix, fy, nextNum);
+            invoice.setInvoiceNumber(invoiceNumber);
+            generatedInvoiceNumber = true;
+        } else {
+            invoice.setInvoiceNumber(request.getInvoiceNumber());
+        }
+        // Always update invoice sequence for every new invoice
+        InvoiceSequence seq = invoiceSequenceRepository.findByPrefixAndFinancialYear(prefix, fy)
+            .orElseGet(() -> {
+                InvoiceSequence s = new InvoiceSequence();
+                s.setPrefix(prefix);
+                s.setFinancialYear(fy);
+                s.setCurrentNumber(0);
+                s.setCreatedAt(LocalDateTime.now());
+                s.setUpdatedAt(LocalDateTime.now());
+                return invoiceSequenceRepository.save(s);
+            });
+        int nextNum = seq.getCurrentNumber() + 1;
+        seq.setCurrentNumber(nextNum);
+        seq.setUpdatedAt(LocalDateTime.now());
+        invoiceSequenceRepository.save(seq);
+
+        invoice.setInvoiceDate(request.getInvoiceDate());
+        invoice.setDueDate(request.getDueDate());
+        // Manually set Customer and Quotation
+        if (request.getCustomerId() != null) {
+            Customer customer = customerRepository.findById(UUID.fromString(request.getCustomerId()))
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+            invoice.setCustomer(customer);
+        }
+        if (request.getQuotationId() != null && !request.getQuotationId().isEmpty()) {
+            Quotation quotation = quotationRepository.findById(UUID.fromString(request.getQuotationId()))
+                .orElse(null);
+            invoice.setQuotation(quotation);
+        }
         invoice.setCreatedAt(LocalDateTime.now());
         invoice.setUpdatedAt(LocalDateTime.now());
         Invoice saved = invoiceRepository.save(invoice);
-        return modelMapper.map(saved, InvoiceResponse.class);
+
+        // Save invoice items
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            List<InvoiceItem> itemsToSave = request.getItems().stream()
+                .filter(itemReq -> itemReq.getItemId() != null && !itemReq.getItemId().isEmpty())
+                .map(itemReq -> {
+                    InvoiceItem item = new InvoiceItem();
+                    item.setInvoice(saved);
+                    item.setItemId(itemReq.getItemId());
+                    item.setQuantity(itemReq.getQuantity());
+                    item.setUnitPrice(itemReq.getUnitPrice());
+                    item.setGstRate(itemReq.getGstRate());
+                    item.setTotalPrice(itemReq.getTotalPrice());
+                    item.setHsnCode(itemReq.getHsnCode());
+                    item.setDescription(itemReq.getDescription());
+                    return item;
+                })
+                .collect(Collectors.toList());
+            if (!itemsToSave.isEmpty()) {
+                invoiceItemRepository.saveAll(itemsToSave);
+            } else {
+                System.out.println("No valid invoice items to save for invoice: " + saved.getInvoiceNumber());
+            }
+        } else {
+            System.out.println("No items received in invoice request for invoice: " + invoice.getInvoiceNumber());
+        }
+        // TODO: Add logic for invoice_sequences if required by your business rules
+
+        InvoiceResponse response = modelMapper.map(saved, InvoiceResponse.class);
+        // Attach items to response
+        if (request.getItems() != null) {
+            List<InvoiceItemResponse> itemResponses = invoiceItemRepository.findAll().stream()
+                .filter(i -> i.getInvoice().getId().equals(saved.getId()))
+                .map(i -> modelMapper.map(i, InvoiceItemResponse.class))
+                .collect(Collectors.toList());
+            response.setItems(itemResponses);
+        }
+        return response;
     }
 
     @Override
@@ -56,5 +183,13 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public void delete(UUID id) {
         invoiceRepository.deleteById(id);
+    }
+
+    // Helper method
+    private String getCurrentFinancialYear() {
+        java.time.LocalDate now = java.time.LocalDate.now();
+        int year = now.getMonthValue() >= 4 ? now.getYear() : now.getYear() - 1;
+        int nextYear = year + 1;
+        return String.format("%d-%02d", year, nextYear % 100);
     }
 }

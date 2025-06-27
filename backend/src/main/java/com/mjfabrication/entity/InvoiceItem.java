@@ -18,9 +18,8 @@ public class InvoiceItem {
     @JoinColumn(name = "invoice_id", nullable = false)
     private Invoice invoice;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @Column(name = "item_id", nullable = false)
+    private String itemId;
 
     @Column(name = "quantity", nullable = false)
     private BigDecimal quantity;

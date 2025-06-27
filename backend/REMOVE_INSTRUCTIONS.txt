@@ -1,0 +1,4 @@
+1. Delete all files listed in REMOVE_LIST.txt.
+2. Remove any references to Product or ProductCategory in other entities, DTOs, services, and controllers.
+3. Remove any related database migrations or SQL scripts if present.
+4. Test the application to ensure no references remain.

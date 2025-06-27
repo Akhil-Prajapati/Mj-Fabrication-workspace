@@ -22,7 +22,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InvoiceResponse> getById(@PathVariable UUID id) {
+    public ResponseEntity<InvoiceResponse> getById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(invoiceService.getById(id));
     }
 

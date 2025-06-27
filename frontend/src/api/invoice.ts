@@ -32,6 +32,8 @@ interface InvoiceResponse {
   sgstAmount: number;
   igstAmount: number;
   totalAmount: number;
+  adjustment: number;
+  notes?: string;
   paymentTerms: string;
   status: string;
   customerId: string;
@@ -50,6 +52,8 @@ interface InvoiceRequest {
   sgstAmount: number;
   igstAmount: number;
   totalAmount: number;
+  adjustment: number;
+  notes?: string;
   status: string;
   paymentTerms?: string;
 }

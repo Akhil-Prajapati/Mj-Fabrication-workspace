@@ -15,6 +15,7 @@ import { Plus, Trash2, Calculator, Package } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { getInventoryItems } from "@/api/inventory";
+import { InvoiceSchema } from "./invoiceSchema";
 
 interface InvoiceItem {
   id: string;
@@ -321,14 +322,33 @@ const InvoiceForm = ({
       return;
     }
 
+    // Sync adjustment and notes to invoice before save
+    const invoiceToSave = {
+      ...invoice,
+      adjustment,
+      notes: invoice.notes,
+      items: invoice.items.map((item) => {
+        // Find the inventory item to get itemId
+        console.log(inventoryItems, "Inventory Items");
+
+        const inventoryMatch = inventoryItems.find(
+          (inv) =>
+            inv.itemName === item.itemName && inv.hsnCode === item.hsnCode
+        );
+        let itemId = inventoryMatch ? inventoryMatch.itemId : undefined;
+        return { ...item, itemId };
+      }),
+    };
     calculateTotals();
-    onSave(invoice);
+    onSave(invoiceToSave);
   };
 
   // Sync selectedCustomer and invoice.customer on mount and when changed
   useEffect(() => {
     if (selectedCustomer) {
       setInvoice((prev) => ({ ...prev, customer: selectedCustomer }));
+      // Recalculate totals when customer changes
+      setTimeout(() => calculateTotalsForItems(invoice.items), 100);
     }
   }, [selectedCustomer]);
 
@@ -336,6 +356,8 @@ const InvoiceForm = ({
     // Fetch inventory items from backend
     getInventoryItems()
       .then((data) => {
+        console.log(data, "Fetched inventory items");
+
         setInventoryItems(data || []);
       })
       .catch((err) => {

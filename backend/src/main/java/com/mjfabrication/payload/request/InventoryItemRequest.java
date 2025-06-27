@@ -19,4 +19,5 @@ public class InventoryItemRequest {
     private String supplierInfo;
     private Map<String, String> specifications;
     private double gstRate;
+    private String productId; // UUID of the product
 }
