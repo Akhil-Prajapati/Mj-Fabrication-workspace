@@ -1,7 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Download, Printer } from "lucide-react";
-import html2pdf from "html2pdf.js";
+import InvoicePrintDocument from "./InvoicePrintDocument";
+import InvoicePDFDocument from "./InvoicePDFDocument";
+import React, { useRef } from "react";
+import { PDFDownloadLink, Document, Page, Text } from "@react-pdf/renderer";
 
 interface InvoiceItem {
   id: string;
@@ -57,24 +60,32 @@ const InvoicePreview = ({
     return `${Math.floor(num).toLocaleString()} Rupees Only`;
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  // Ref for hidden print container
+  const printRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadPDF = () => {
-    const element = document.getElementById("invoice-preview");
-    if (element) {
-      html2pdf()
-        .set({
-          margin: 0.5,
-          filename: `${invoice.invoiceNumber || "invoice"}.pdf`,
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-        })
-        .from(element)
-        .save();
+  // Print using a new window for best results
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank", "width=900,height=1200");
+    if (printWindow) {
+      printWindow.document.write(
+        `<!DOCTYPE html><html><head><title>Invoice Print</title></head><body style='margin:0;'>`
+      );
+      printWindow.document.write(`<div id='invoice-print-root'></div>`);
+      printWindow.document.write(`</body></html>`);
+      printWindow.document.close();
+      setTimeout(() => {
+        if (printWindow.document.getElementById("invoice-print-root")) {
+          printWindow.document.getElementById("invoice-print-root").innerHTML =
+            printRef.current?.innerHTML || "";
+          printWindow.focus();
+          printWindow.print();
+        }
+      }, 300);
     }
   };
+
+  // PDFDownloadLink for pixel-perfect PDF
+  const pdfFileName = `${invoice.invoiceNumber || "invoice"}.pdf`;
 
   const indianStates = [
     { name: "Andhra Pradesh", code: "28" },
@@ -112,25 +123,41 @@ const InvoicePreview = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
         {/* Preview Header */}
-        <div className="flex justify-between items-center p-4 border-b print:hidden">
+        <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold">Invoice Preview</h3>
           <div className="flex gap-2">
             <Button onClick={handlePrint} variant="outline" size="sm">
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
-            <Button onClick={handleDownloadPDF} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
-            </Button>
+            {/* Main PDF Download */}
+            <PDFDownloadLink
+              document={
+                <InvoicePDFDocument
+                  invoice={invoice}
+                  indianStates={indianStates}
+                  numberToWords={numberToWords}
+                  // logoUrl can be passed here if available
+                />
+              }
+              fileName={pdfFileName}
+              style={{ textDecoration: "none" }}
+            >
+              {({ loading }) => (
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  {loading ? "Preparing PDF..." : "Download PDF"}
+                </Button>
+              )}
+            </PDFDownloadLink>
             <Button onClick={onClose} variant="outline" size="sm">
               <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Invoice Document */}
-        <div id="invoice-preview" className="p-6 bg-white">
+        {/* Invoice Document Preview (screen only) */}
+        <div className="p-6 bg-white">
           {/* Company Header */}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-blue-900 mb-2">
@@ -392,6 +419,14 @@ const InvoicePreview = ({
             </div>
           </div>
         </div>
+      </div>
+      {/* Hidden print/PDF document for export */}
+      <div style={{ display: "none" }} ref={printRef}>
+        <InvoicePrintDocument
+          invoice={invoice}
+          numberToWords={numberToWords}
+          indianStates={indianStates}
+        />
       </div>
     </div>
   );
