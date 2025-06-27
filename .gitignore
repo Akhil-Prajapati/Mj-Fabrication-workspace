@@ -1,4 +1,6 @@
 # Java
+# Ignore Spring Boot configuration
+/src/main/resources/application-dev.properties
 /target/
 *.class
 *.jar
