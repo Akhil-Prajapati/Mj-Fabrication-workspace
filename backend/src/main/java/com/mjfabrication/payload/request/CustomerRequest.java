@@ -2,6 +2,7 @@ package com.mjfabrication.payload.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import com.mjfabrication.enums.CustomerType;
 import lombok.Data;
@@ -28,7 +29,7 @@ public class CustomerRequest {
 
     private Boolean isActive = true;
 
-    // Add addresses field for saving customer addresses
+     @Valid // Add this annotation for nested validation
     private List<CustomerAddressRequest> addresses;
 
     @NotBlank

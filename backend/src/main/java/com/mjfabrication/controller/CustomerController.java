@@ -39,13 +39,14 @@ public class CustomerController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CustomerResponse> update(@PathVariable UUID id, @Valid @RequestBody CustomerRequest request) {
-        System.out.println(id+"idssssssss");
+    public ResponseEntity<CustomerResponse> update(@PathVariable("id") UUID id, @RequestBody Map<String, Object> requestMap) {
+        requestMap = decryptionUtilService.decryptIfNeeded(requestMap);
+        CustomerRequest request = mapToCustomerRequest(requestMap);
         return ResponseEntity.ok(customerService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         customerService.delete(id);
         return ResponseEntity.noContent().build();
     }

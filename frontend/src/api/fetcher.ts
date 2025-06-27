@@ -151,16 +151,21 @@ export const fetchUserProfile = async () => {
 
 // Example: Login API call (no encryption on request, but decrypt response)
 export const login = async (username: string, password: string) => {
-  return fetcher(
-    {
-      path: "auth/login", // Remove leading /api or /api/v1
-      shouldEncrypt: false,
-      shouldDecrypt: true,
-      shouldShowLoader: true,
-    },
-    {
-      method: "POST",
-      json: { username, password },
-    }
-  );
+  try {
+    return await fetcher(
+      {
+        path: "auth/login", // Remove leading /api or /api/v1
+        shouldEncrypt: false,
+        shouldDecrypt: true,
+        shouldShowLoader: true,
+      },
+      {
+        method: "POST",
+        json: { username, password },
+      }
+    );
+  } catch (error) {
+    console.error("Login error:", error);
+    return { error: "Login failed", details: error };
+  }
 };

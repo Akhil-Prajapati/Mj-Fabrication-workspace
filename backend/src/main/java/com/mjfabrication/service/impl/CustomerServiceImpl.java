@@ -96,14 +96,55 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerResponse update(UUID id, CustomerRequest request) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
-        modelMapper.map(request, customer);
+        
+        // Manual mapping instead of ModelMapper
+        customer.setCustomerName(request.getCustomerName());
+        customer.setEmail(request.getEmail());
+        customer.setPhone(request.getPhone());
+        customer.setCustomerType(request.getCustomerType());
+        customer.setGstNumber(request.getGstNumber());
+        customer.setStateCode(request.getStateCode());
+        customer.setCompanyName(request.getCompanyName());
+        if (request.getIsActive() != null) {
+            customer.setIsActive(request.getIsActive());
+        }
         customer.setUpdatedAt(LocalDateTime.now());
+        
         Customer saved = customerRepository.save(customer);
+
+        // Update addresses: delete old, save new
+        List<CustomerAddress> oldAddresses = customerAddressRepository.findByCustomerId(id);
+        customerAddressRepository.deleteAll(oldAddresses);
+        if (request.getAddresses() != null && !request.getAddresses().isEmpty()) {
+            List<CustomerAddress> addresses = request.getAddresses().stream()
+                .map(addrReq -> {
+                    CustomerAddress addr = new CustomerAddress();
+                    addr.setCustomer(saved);
+                    addr.setAddressLine1(addrReq.getAddressLine1());
+                    addr.setAddressLine2(addrReq.getAddressLine2());
+                    addr.setCity(addrReq.getCity());
+                    if (Boolean.FALSE.equals(addrReq.getIsDefault())) {
+                        addr.setState(saved.getStateCode());
+                    } else {
+                        addr.setState(addrReq.getState());
+                    }
+                    addr.setPincode(addrReq.getPincode());
+                    addr.setIsDefault(addrReq.getIsDefault());
+                    addr.setAddressType(addrReq.getAddressType());
+                    return addr;
+                })
+                .collect(Collectors.toList());
+            customerAddressRepository.saveAll(addresses);
+        }
         return modelMapper.map(saved, CustomerResponse.class);
     }
 
     @Override
     public void delete(UUID id) {
+        // Delete all addresses for this customer first
+        List<CustomerAddress> addresses = customerAddressRepository.findByCustomerId(id);
+        customerAddressRepository.deleteAll(addresses);
+        // Now delete the customer
         customerRepository.deleteById(id);
     }
 }

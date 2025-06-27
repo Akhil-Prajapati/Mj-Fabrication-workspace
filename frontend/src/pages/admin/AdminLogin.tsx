@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { login } from "@/api/fetcher";
+import { log } from "node:console";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -21,8 +22,17 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      await login(credentials.username, credentials.password);
-      // If no error is thrown, login is successful (cookie is set)
+      const result = await login(credentials.username, credentials.password);
+      console.log("Login result:", result);
+      if (result?.error || result?.details) {
+        toast({
+          title: "Login Failed",
+          description: result?.error || "Invalid username or password.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // If no error is returned, login is successful (cookie is set)
       toast({
         title: "Login Successful",
         description: "Welcome to MJ Fabrication Admin Panel",

@@ -447,6 +447,10 @@ const CustomerManagement = () => {
       );
       const payload = {
         ...editFormData,
+        customerType: (
+          editFormData.customerType || "UNREGISTERED"
+        ).toUpperCase(),
+        type: (editFormData.type || "UNREGISTERED").toUpperCase(),
         addresses: updatedAddresses,
       };
       const updated = await fetcher(
@@ -755,7 +759,7 @@ const CustomerManagement = () => {
       {/* Search and Customer List */}
       <Card>
         <CardHeader>
-          <CardTitle>Customer Database</CardTitle>
+          <CardTitle>Customers</CardTitle>
         </CardHeader>
         <CardContent>
           <NinjaTable

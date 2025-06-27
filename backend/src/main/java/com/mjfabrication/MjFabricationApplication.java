@@ -21,6 +21,6 @@ public class MjFabricationApplication {
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() {
         System.out.println("Mj-Fabrication API running"
-            + (SERVER_PORT != 0 ? (" on PORT " + SERVER_PORT) : "") + " 🚀");
+            + (SERVER_PORT != 0 ? (" on PORT " + SERVER_PORT) : "") + " 🏃‍♂️‍➡️");
     }
 }
