@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Calculator, Package } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { getInventoryItems } from "@/api/inventory";
 
 interface InvoiceItem {
   id: string;
@@ -74,8 +75,6 @@ const InvoiceForm = ({
   setSelectedCustomer,
   loading,
 }: InvoiceFormProps) => {
-  console.log(customers, "Customers in InvoiceForm:");
-
   const navigate = useNavigate();
 
   const [invoice, setInvoice] = useState<InvoiceData>({
@@ -96,8 +95,8 @@ const InvoiceForm = ({
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({});
   const [gstError, setGstError] = useState("");
 
-  // Load inventory items from localStorage
-  const inventoryItems = JSON.parse(localStorage.getItem("inventory") || "[]");
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [adjustment, setAdjustment] = useState<number>(0);
 
   // Indian states with state codes
   const indianStates = [
@@ -139,7 +138,7 @@ const InvoiceForm = ({
     const newItem: InvoiceItem = {
       id: Date.now().toString(),
       itemName: "Item Name",
-      hsnCode: "73089090",
+      hsnCode: "",
       quantity: 1,
       unit: "Pieces",
       rate: 0,
@@ -237,7 +236,8 @@ const InvoiceForm = ({
       });
     }
 
-    const totalAmount = subtotal + sgst + cgst + igst;
+    // Apply adjustment to total
+    const totalAmount = subtotal + sgst + cgst + igst + adjustment;
 
     setInvoice((prev) => ({
       ...prev,
@@ -254,8 +254,6 @@ const InvoiceForm = ({
   };
 
   const handleCustomerSelect = (customerId: string) => {
-    console.log("Selected Customer ID:", customerId);
-
     const customer = customers.find((c) => c.customerId === customerId);
     if (customer) {
       setInvoice((prev) => ({ ...prev, customer }));
@@ -334,6 +332,18 @@ const InvoiceForm = ({
     }
   }, [selectedCustomer]);
 
+  useEffect(() => {
+    // Fetch inventory items from backend
+    getInventoryItems()
+      .then((data) => {
+        setInventoryItems(data || []);
+      })
+      .catch((err) => {
+        setInventoryItems([]);
+        console.error("Failed to fetch inventory items", err);
+      });
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -410,7 +420,6 @@ const InvoiceForm = ({
             <div className="flex-1">
               <Label htmlFor="customer">Select Customer</Label>
               <Select
-                placeholder="Select a customer"
                 value={invoice.customer?.customerId || "default"}
                 onValueChange={handleCustomerSelect}
               >
@@ -454,8 +463,14 @@ const InvoiceForm = ({
               <p>{invoice.customer.address}</p>
               <p>GST: {invoice.customer.gstNumber}</p>
               <p>
-                Place of Supply: {invoice.customer.state} (
-                {invoice.customer.stateCode})
+                Place of Supply:{" "}
+                {(() => {
+                  const stateObj = indianStates.find(
+                    (s) => s.code === invoice.customer?.stateCode
+                  );
+                  return stateObj ? stateObj.name : invoice.customer.state;
+                })()}{" "}
+                ({invoice.customer.stateCode})
               </p>
             </div>
           )}
@@ -467,19 +482,29 @@ const InvoiceForm = ({
           <div className="flex justify-between items-center">
             <CardTitle>Invoice Items</CardTitle>
             <div className="flex gap-2">
-              <Select onValueChange={addFromInventory}>
+              <Select onValueChange={addFromInventory} value="">
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Add from Inventory" />
                 </SelectTrigger>
                 <SelectContent>
-                  {inventoryItems.map((item: any) => (
-                    <SelectItem key={item.itemId} value={item.itemId}>
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        <span>{item.itemName}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {inventoryItems.map((item: any) => {
+                    const count = invoice.items.filter(
+                      (i) => i.itemName === item.itemName
+                    ).length;
+                    return (
+                      <SelectItem key={item.itemId} value={item.itemId}>
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          <span>{item.itemName}</span>
+                          {count > 0 && (
+                            <span className="ml-2 text-xs text-gray-400">
+                              (added {count})
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               <Button onClick={addItem} size="sm">
@@ -623,6 +648,20 @@ const InvoiceForm = ({
                   <span className="font-mono">
                     ₹{invoice.subtotal.toFixed(2)}
                   </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Adjustment:</span>
+                  <Input
+                    type="number"
+                    className="w-32 font-mono"
+                    value={adjustment}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setAdjustment(val);
+                      calculateTotalsForItems(invoice.items);
+                    }}
+                    step="0.01"
+                  />
                 </div>
                 {invoice.sgst > 0 && invoice.cgst > 0 && (
                   <>
