@@ -200,7 +200,7 @@ const InvoiceGeneration = () => {
     if (!customers || customers.length === 0) {
       const all = await fetchCustomers();
       return all.find(
-        (c) => c.id === customerId || c.customerId === customerId
+        (c: any) => c.id === customerId || c.customerId === customerId
       );
     }
     return customers.find(

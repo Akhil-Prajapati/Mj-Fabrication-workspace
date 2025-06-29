@@ -150,6 +150,10 @@ const InvoicePreview = ({
                 </Button>
               )}
             </PDFDownloadLink>
+            {/* Show missing/invalid data warning if any critical fields are missing */}
+            {/* {(!invoice.items || invoice.items.length === 0 || invoice.items.some(item => !item.itemName || !item.hsnCode || !item.quantity || !item.rate || !item.amount)) && (
+              <span className="text-xs text-red-600 ml-2">Warning: Some item details are missing or invalid and will not appear in the PDF.</span>
+            )} */}
             <Button onClick={onClose} variant="outline" size="sm">
               <X className="h-4 w-4" />
             </Button>

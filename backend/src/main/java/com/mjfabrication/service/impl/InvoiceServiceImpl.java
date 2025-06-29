@@ -26,6 +26,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -248,6 +251,89 @@ public class InvoiceServiceImpl implements InvoiceService {
             .collect(Collectors.toList());
         resp.setRecentInvoices(recent);
         return resp;
+    }
+
+    @Override
+    public Object getGstr1Json(int month, int year) {
+        List<Invoice> invoices = invoiceRepository.findByMonthAndYear(month, year);
+        Map<String, Object> gstr1 = new HashMap<>();
+        gstr1.put("gstin", "YOUR_GSTIN"); // TODO: Replace with your GSTIN or fetch from config
+        gstr1.put("fp", String.format("%02d%04d", month, year));
+        gstr1.put("gt", 0); // Gross Turnover (fill as needed)
+        gstr1.put("cur_gt", 0); // Current Gross Turnover (fill as needed)
+
+        // B2B Section
+        Map<String, List<Invoice>> b2bMap = new HashMap<>();
+        for (Invoice inv : invoices) {
+            String ctin = inv.getCustomer().getGstNumber();
+            if (ctin == null || ctin.isEmpty()) continue;
+            b2bMap.computeIfAbsent(ctin, k -> new ArrayList<>()).add(inv);
+        }
+        List<Map<String, Object>> b2b = new ArrayList<>();
+        for (Map.Entry<String, List<Invoice>> entry : b2bMap.entrySet()) {
+            Map<String, Object> b2bEntry = new HashMap<>();
+            b2bEntry.put("ctin", entry.getKey());
+            List<Map<String, Object>> invList = new ArrayList<>();
+            for (Invoice inv : entry.getValue()) {
+                Map<String, Object> invMap = new HashMap<>();
+                invMap.put("inum", inv.getInvoiceNumber());
+                invMap.put("idt", inv.getInvoiceDate().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                invMap.put("val", inv.getTotalAmount());
+                invMap.put("pos", inv.getCustomer().getStateCode());
+                invMap.put("rchrg", "N");
+                invMap.put("inv_typ", "R");
+                List<Map<String, Object>> itms = new ArrayList<>();
+                int itemNum = 1;
+                List<InvoiceItem> items = invoiceItemRepository.findAll().stream()
+                    .filter(i -> i.getInvoice().getId().equals(inv.getId()))
+                    .collect(Collectors.toList());
+                for (InvoiceItem item : items) {
+                    Map<String, Object> itm = new HashMap<>();
+                    itm.put("num", itemNum++);
+                    Map<String, Object> itmDet = new HashMap<>();
+                    itmDet.put("rt", item.getGstRate());
+                    itmDet.put("txval", item.getTotalPrice().subtract(inv.getCgstAmount()).subtract(inv.getSgstAmount()).subtract(inv.getIgstAmount()));
+                    itmDet.put("camt", inv.getCgstAmount());
+                    itmDet.put("samt", inv.getSgstAmount());
+                    itmDet.put("iamt", inv.getIgstAmount());
+                    itmDet.put("csamt", 0);
+                    itm.put("itm_det", itmDet);
+                    itms.add(itm);
+                }
+                invMap.put("itms", itms);
+                invList.add(invMap);
+            }
+            b2bEntry.put("inv", invList);
+            b2b.add(b2bEntry);
+        }
+        gstr1.put("b2b", b2b);
+
+        // HSN Section
+        Map<String, Object> hsn = new HashMap<>();
+        List<Map<String, Object>> hsnData = new ArrayList<>();
+        int hsnNum = 1;
+        for (Invoice inv : invoices) {
+            List<InvoiceItem> items = invoiceItemRepository.findAll().stream()
+                .filter(i -> i.getInvoice().getId().equals(inv.getId()))
+                .collect(Collectors.toList());
+            for (InvoiceItem item : items) {
+                Map<String, Object> hsnEntry = new HashMap<>();
+                hsnEntry.put("num", hsnNum++);
+                hsnEntry.put("hsn_sc", item.getHsnCode());
+                hsnEntry.put("uqc", "NOS");
+                hsnEntry.put("qty", item.getQuantity());
+                hsnEntry.put("rt", item.getGstRate());
+                hsnEntry.put("txval", item.getTotalPrice());
+                hsnEntry.put("iamt", inv.getIgstAmount());
+                hsnEntry.put("camt", inv.getCgstAmount());
+                hsnEntry.put("samt", inv.getSgstAmount());
+                hsnEntry.put("csamt", 0);
+                hsnData.add(hsnEntry);
+            }
+        }
+        hsn.put("data", hsnData);
+        gstr1.put("hsn", hsn);
+        return gstr1;
     }
 
     // Helper method

@@ -82,6 +82,27 @@ const InvoiceList = ({
     .reduce((sum, inv) => sum + inv.totalAmount, 0);
   const pendingAmount = totalAmount - paidAmount;
 
+  const handleDelete = async (invoiceId: string) => {
+    if (!window.confirm("Are you sure you want to delete this invoice?"))
+      return;
+    setLoading(true);
+    try {
+      // Replace with your actual API call
+      await fetch(`/api/v1/invoices/${invoiceId}`, { method: "DELETE" });
+      setInvoices((prev) => prev.filter((inv) => inv.id !== invoiceId));
+    } catch (err) {
+      alert("Failed to delete invoice.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (invoice: Invoice) => {
+    // You can open a modal or navigate to an edit page
+    // For now, just alert
+    alert(`Edit invoice: ${invoice.invoiceNumber}`);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-lg">Loading invoices...</div>;
   }
@@ -227,6 +248,20 @@ const InvoiceList = ({
                         onClick={() => onDownload(invoice)}
                       >
                         <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(invoice)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(invoice.id)}
+                      >
+                        Delete
                       </Button>
                     </div>
                   </TableCell>

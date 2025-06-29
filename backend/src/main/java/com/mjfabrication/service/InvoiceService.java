@@ -13,4 +13,5 @@ public interface InvoiceService {
     InvoiceResponse update(UUID id, InvoiceRequest request);
     void delete(UUID id);
     DashboardResponse getDashboardStats(int month, int year);
+    Object getGstr1Json(int month, int year);
 }

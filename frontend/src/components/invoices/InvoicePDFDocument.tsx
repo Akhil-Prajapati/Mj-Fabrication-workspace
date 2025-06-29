@@ -5,11 +5,10 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   Image,
 } from "@react-pdf/renderer";
 
-// Types copied from InvoicePreview
+// Types
 interface InvoiceItem {
   id: string;
   itemName: string;
@@ -19,6 +18,7 @@ interface InvoiceItem {
   rate: number;
   amount: number;
 }
+
 interface Customer {
   customerId: string;
   companyName: string;
@@ -28,6 +28,7 @@ interface Customer {
   state: string;
   stateCode: string;
 }
+
 interface InvoicePreviewData {
   invoiceNumber: string;
   invoiceDate: string;
@@ -48,9 +49,10 @@ interface Props {
   invoice: InvoicePreviewData;
   indianStates: { name: string; code: string }[];
   numberToWords?: (num: number) => string;
-  logoUrl?: string; // Optional logo image path
+  logoUrl?: string;
 }
 
+// Simple styles using only built-in fonts
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
@@ -58,46 +60,12 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: "#fff",
   },
-  logo: {
-    width: 80,
-    height: 40,
-    marginBottom: 8,
-    objectFit: "contain",
-    alignSelf: "center",
-  },
   header: {
     textAlign: "center",
     marginBottom: 8,
   },
-  companyName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-  companyDetails: {
-    fontSize: 10,
-    color: "#333",
-    marginBottom: 1,
-  },
-  gstn: {
-    fontWeight: "bold",
-    fontSize: 11,
-    marginBottom: 8,
-  },
-  invoiceTitle: {
-    textAlign: "right",
-    fontSize: 13,
-    fontWeight: "bold",
-    marginBottom: 8,
-    marginTop: -30,
-  },
   section: {
     marginBottom: 8,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 2,
   },
   bold: {
     fontWeight: "bold",
@@ -114,7 +82,7 @@ const styles = StyleSheet.create({
     minHeight: 20,
   },
   tableHeader: {
-    backgroundColor: "#1976d2",
+    backgroundColor: "#000",
     color: "#fff",
     fontWeight: "bold",
     fontSize: 11,
@@ -129,22 +97,24 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderColor: "#222",
     borderStyle: "solid",
-    padding: 4,
+    padding: 8,
     fontSize: 10,
     textAlign: "center",
     flexGrow: 1,
-    minHeight: 18,
+    minHeight: 22,
+    backgroundColor: "#fff",
   },
   tableCellLeft: {
     textAlign: "left",
-    paddingLeft: 6,
+    paddingLeft: 10,
   },
   tableCellRight: {
     textAlign: "right",
-    paddingRight: 6,
+    paddingRight: 10,
   },
   tableFooter: {
-    backgroundColor: "#f1f1f1",
+    borderTop: "1 solid #222",
+    backgroundColor: "#fff",
     fontWeight: "bold",
     minHeight: 20,
   },
@@ -167,6 +137,25 @@ const styles = StyleSheet.create({
   },
 });
 
+// Safe currency formatting - using Rs. to avoid symbol issues
+const formatCurrency = (amount: number | undefined): string => {
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return "Rs. 0.00";
+  }
+  try {
+    return `Rs. ${Number(amount).toFixed(2)}`;
+  } catch (error) {
+    return "Rs. 0.00";
+  }
+};
+
+// Safe number formatting
+const safeNumber = (value: any): number => {
+  if (value === undefined || value === null) return 0;
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
 const InvoicePDFDocument: React.FC<Props> = ({
   invoice,
   indianStates,
@@ -177,223 +166,366 @@ const InvoicePDFDocument: React.FC<Props> = ({
     numberToWords ||
     ((num: number): string => {
       if (invoice.amountInWords) return invoice.amountInWords;
-      if (num === 0) return "Zero";
-      return `${Math.floor(num).toLocaleString()} Rupees Only`;
+      if (num === 0) return "Zero Rupees Only";
+      try {
+        return `${Math.floor(num).toLocaleString()} Rupees Only`;
+      } catch (error) {
+        return "Amount in words not available";
+      }
     });
+
   const placeOfSupply = (() => {
-    const code = invoice.customer.stateCode || invoice.customer.state;
-    const found = indianStates.find((s) => s.code === code || s.name === code);
-    return found
-      ? `${found.name} (${found.code})`
-      : invoice.customer.state || "-";
+    try {
+      const code = invoice.customer.stateCode || invoice.customer.state;
+      const found = indianStates.find(
+        (s) => s.code === code || s.name === code
+      );
+      return found ? found.name : invoice.customer.state || "-";
+    } catch (error) {
+      return "-";
+    }
   })();
+
+  // Safe access to invoice data
+  const safeInvoice = {
+    invoiceNumber: invoice?.invoiceNumber || "-",
+    invoiceDate: invoice?.invoiceDate || "",
+    dueDate: invoice?.dueDate || "",
+    customer: {
+      companyName: invoice?.customer?.companyName || "-",
+      contactPerson: invoice?.customer?.contactPerson || "-",
+      address: invoice?.customer?.address || "-",
+      gstNumber: invoice?.customer?.gstNumber || "-",
+    },
+    items: invoice?.items || [],
+    subtotal: safeNumber(invoice?.subtotal),
+    sgst: safeNumber(invoice?.sgst),
+    cgst: safeNumber(invoice?.cgst),
+    igst: safeNumber(invoice?.igst),
+    totalAmount: safeNumber(invoice?.totalAmount),
+    notes: invoice?.notes || "-",
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Logo and Title Row */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+        {/* Header Section */}
+        <View style={{ alignItems: "center", marginBottom: 8 }}>
+          <View style={{ marginBottom: 4 }}>
+            <Image
+              src="/logo.jpeg"
+              style={{
+                width: 200,
+                height: 100,
+                objectFit: "contain",
+                alignSelf: "center",
+              }}
+            />
           </View>
-          <Text style={styles.invoiceTitle}>TAX INVOICE</Text>
-        </View>
-        {/* Company Header */}
-        <View style={styles.header}>
-          <Text style={styles.companyName}>MJ FABRICATION</Text>
-          <Text style={styles.companyDetails}>
-            31, MAHESHWARI PARK SOCIETY,KATHWAD ROAD NAVA NARODA
-          </Text>
-          <Text style={styles.companyDetails}>
-            AHMEDABAD, Gujarat India - 382330
-          </Text>
-          <Text style={styles.companyDetails}>
-            M: 9712929748 EMAIL: mjfabworld62@gmail.com
-          </Text>
-          <Text style={styles.companyDetails}>
-            WEBSITE: https://g.page/fabrication-ahmedabad?share
-          </Text>
-          <Text style={styles.gstn}>GSTN: 24AFZPP4386C1ZY</Text>
-        </View>
-        {/* Customer & Invoice Info Row */}
-        <View
-          style={{
-            flexDirection: "row",
-            borderWidth: 1,
-            borderColor: "#222",
-            borderStyle: "solid",
-            marginBottom: 8,
-          }}
-        >
-          <View
+          <Text
             style={{
-              flex: 2,
-              padding: 6,
-              borderRightWidth: 1,
-              borderColor: "#222",
-              borderStyle: "solid",
+              fontSize: 18,
+              fontWeight: "bold",
+              color: "#1976d2",
+              marginBottom: 2,
             }}
           >
-            <Text style={styles.bold}>{invoice.customer.companyName}</Text>
-            <Text>{invoice.customer.address}</Text>
-            <Text>{invoice.customer.contactPerson}</Text>
-            <Text>Ahmedabad, Gujarat - 382330</Text>
-            <Text>Place of Supply : {placeOfSupply}</Text>
-            <Text style={styles.bold}>GSTN : {invoice.customer.gstNumber}</Text>
-          </View>
-          <View style={{ flex: 2, padding: 6 }}>
-            <Text>
-              <Text style={styles.bold}>Invoice No: </Text>
-              {invoice.invoiceNumber || "-"}
+            MJ FABRICATION
+          </Text>
+          <Text style={{ fontSize: 10, color: "#000" }}>
+            31, MAHESHWARI PARK SOCIETY, AMARPARK RCC RD
+          </Text>
+          <Text style={{ fontSize: 10, color: "#000" }}>
+            VASANT VIHAR 2, NAVA NARODA, AHMEDABAD
+          </Text>
+          <Text style={{ fontSize: 10, color: "#000" }}>
+            GUJARAT, INDIA - 382330
+          </Text>
+          <Text style={{ fontSize: 10, color: "#000" }}>
+            Phone: 9712929748 | Email: mjfabworld62@gmail.com
+          </Text>
+          <Text style={{ fontSize: 10, color: "#000", marginBottom: 2 }}>
+            GSTN: 24AFZPP4386C1ZY
+          </Text>
+        </View>
+
+        {/* TAX INVOICE Centered Box */}
+        <View style={{ alignItems: "center", marginBottom: 10 }}>
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#222",
+              padding: 6,
+              borderRadius: 2,
+            }}
+          >
+            <Text style={{ fontWeight: "bold", fontSize: 13, color: "#000" }}>
+              TAX INVOICE
             </Text>
-            <Text>
-              <Text style={styles.bold}>Invoice Date: </Text>
-              {invoice.invoiceDate
-                ? new Date(invoice.invoiceDate).toLocaleDateString()
+          </View>
+        </View>
+
+        {/* Bill To & Invoice Details Row */}
+        <View style={{ flexDirection: "row", marginBottom: 8 }}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 11, marginBottom: 2 }}>
+              Bill To:
+            </Text>
+            <Text style={{ fontWeight: "bold", fontSize: 10 }}>
+              {safeInvoice.customer.companyName}
+            </Text>
+            <Text style={{ fontSize: 10 }}>
+              {safeInvoice.customer.contactPerson}
+            </Text>
+            <Text style={{ fontSize: 10 }}>{safeInvoice.customer.address}</Text>
+            <Text style={{ fontSize: 10 }}>
+              Place of Supply: {placeOfSupply}
+            </Text>
+            <Text style={{ fontSize: 10 }}>
+              GSTN: {safeInvoice.customer.gstNumber}
+            </Text>
+          </View>
+          <View style={{ flex: 1, paddingLeft: 8 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 11, marginBottom: 2 }}>
+              Invoice Details:
+            </Text>
+            <Text style={{ fontSize: 10, marginBottom: 2 }}>
+              Invoice No: {safeInvoice.invoiceNumber}
+            </Text>
+            <Text style={{ fontSize: 10, marginBottom: 2 }}>
+              Invoice Date:{" "}
+              {safeInvoice.invoiceDate
+                ? new Date(safeInvoice.invoiceDate).toLocaleDateString()
                 : "-"}
             </Text>
-            <Text>
-              <Text style={styles.bold}>Payment Terms: </Text>Due on Receipt
+            <Text style={{ fontSize: 10, marginBottom: 2 }}>
+              Payment Terms: Net 30
             </Text>
-            <Text>
-              <Text style={styles.bold}>Invoice Due Date: </Text>
-              {invoice.dueDate
-                ? new Date(invoice.dueDate).toLocaleDateString()
+            <Text style={{ fontSize: 10, marginBottom: 2 }}>
+              Due Date:{" "}
+              {safeInvoice.dueDate
+                ? new Date(safeInvoice.dueDate).toLocaleDateString()
                 : "-"}
             </Text>
           </View>
         </View>
+
         {/* Items Table */}
         <View style={styles.table}>
           <View style={styles.tableRow}>
             <Text style={[styles.tableHeader, { flex: 0.7 }]}>S.N.</Text>
-            <Text style={[styles.tableHeader, { flex: 2 }]}>Item</Text>
+            <Text style={[styles.tableHeader, { flex: 2 }]}>
+              Item Description
+            </Text>
             <Text style={[styles.tableHeader, { flex: 1.2 }]}>HSN/SAC</Text>
             <Text style={[styles.tableHeader, { flex: 1 }]}>Qty</Text>
             <Text style={[styles.tableHeader, { flex: 1 }]}>Rate</Text>
             <Text style={[styles.tableHeader, { flex: 1.2 }]}>Amount</Text>
           </View>
-          {invoice.items.map((item, idx) => (
-            <View style={styles.tableRow} key={item.id}>
-              <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+
+          {safeInvoice.items.length > 0 ? (
+            safeInvoice.items.map((item, idx) => (
+              <View style={styles.tableRow} key={item.id || idx}>
+                <Text style={[styles.tableCell, { flex: 0.7 }]}>{idx + 1}</Text>
+                <Text
+                  style={[styles.tableCell, styles.tableCellLeft, { flex: 2 }]}
+                >
+                  {item.itemName || "-"}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 1.2 }]}>
+                  {item.hsnCode || "-"}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>
+                  {safeNumber(item.quantity) + " " + (item.unit || "")}
+                </Text>
+                <Text
+                  style={[styles.tableCell, styles.tableCellRight, { flex: 1 }]}
+                >
+                  {formatCurrency(item.rate)}
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.tableCellRight,
+                    { flex: 1.2 },
+                  ]}
+                >
+                  {formatCurrency(item.amount)}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableCell, { flex: 0.7 }]}>-</Text>
               <Text
                 style={[styles.tableCell, styles.tableCellLeft, { flex: 2 }]}
               >
-                {item.itemName}
+                No items
               </Text>
-              <Text style={[styles.tableCell, { flex: 1.2 }]}>
-                {item.hsnCode}
-              </Text>
-              <Text style={[styles.tableCell, { flex: 1 }]}>
-                {item.quantity} {item.unit}
-              </Text>
+              <Text style={[styles.tableCell, { flex: 1.2 }]}>-</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>-</Text>
               <Text
                 style={[styles.tableCell, styles.tableCellRight, { flex: 1 }]}
               >
-                ₹{Number(item.rate).toFixed(2)}
+                -
               </Text>
               <Text
                 style={[styles.tableCell, styles.tableCellRight, { flex: 1.2 }]}
               >
-                ₹{Number(item.amount).toFixed(2)}
+                -
               </Text>
             </View>
-          ))}
+          )}
+
           {/* Table Footer */}
           <View style={[styles.tableRow, styles.tableFooter]}>
             <Text style={[styles.tableCell, { flex: 0.7 }]}> </Text>
             <Text style={[styles.tableCell, { flex: 2 }]}>Total</Text>
             <Text style={[styles.tableCell, { flex: 1.2 }]}></Text>
             <Text style={[styles.tableCell, { flex: 1 }]}>
-              {invoice.items.reduce((sum, item) => sum + item.quantity, 0)}
+              {safeInvoice.items.reduce(
+                (sum, item) => sum + safeNumber(item.quantity),
+                0
+              )}
             </Text>
             <Text style={[styles.tableCell, { flex: 1 }]}></Text>
             <Text
               style={[styles.tableCell, styles.tableCellRight, { flex: 1.2 }]}
             >
-              ₹{invoice.subtotal.toFixed(2)}
+              {formatCurrency(safeInvoice.subtotal)}
             </Text>
           </View>
         </View>
-        {/* Summary and Bank Details Row */}
+
+        {/* Amount in Words & Tax Calculation Row */}
         <View style={{ flexDirection: "row", marginBottom: 8 }}>
-          {/* Left: Total in words, Bank, Notes, Terms */}
-          <View style={{ flex: 2, paddingRight: 8 }}>
-            <Text style={{ fontWeight: "bold", marginBottom: 2 }}>
-              Total in words:
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 10, marginBottom: 2 }}>
+              Amount in Words:
             </Text>
-            <Text style={{ fontSize: 10, marginBottom: 4 }}>
-              {toWords(invoice.totalAmount)}
+            <Text style={{ fontSize: 10 }}>
+              {toWords(safeInvoice.totalAmount)}
             </Text>
-            <Text style={{ fontWeight: "bold", marginBottom: 2 }}>
+          </View>
+          <View style={{ flex: 1, ...styles.summaryBox }}>
+            <Text style={{ fontWeight: "bold", fontSize: 10, marginBottom: 2 }}>
+              Tax Calculation:
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                fontSize: 10,
+              }}
+            >
+              <Text>Sub Total:</Text>
+              <Text>{formatCurrency(safeInvoice.subtotal)}</Text>
+            </View>
+            {safeInvoice.sgst > 0 && safeInvoice.cgst > 0 && (
+              <>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    fontSize: 10,
+                  }}
+                >
+                  <Text>SGST @ 9%:</Text>
+                  <Text>{formatCurrency(safeInvoice.sgst)}</Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    fontSize: 10,
+                  }}
+                >
+                  <Text>CGST @ 9%:</Text>
+                  <Text>{formatCurrency(safeInvoice.cgst)}</Text>
+                </View>
+              </>
+            )}
+            {safeInvoice.igst > 0 && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  fontSize: 10,
+                }}
+              >
+                <Text>IGST @ 18%:</Text>
+                <Text>{formatCurrency(safeInvoice.igst)}</Text>
+              </View>
+            )}
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderColor: "#222",
+                marginVertical: 2,
+              }}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                fontWeight: "bold",
+                fontSize: 10,
+              }}
+            >
+              <Text>Grand Total:</Text>
+              <Text>{formatCurrency(safeInvoice.totalAmount)}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Bank Details, Notes, Terms Row */}
+        <View style={{ flexDirection: "row", marginBottom: 8 }}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 10, marginBottom: 2 }}>
               Bank Details:
             </Text>
             <Text style={styles.small}>
               Bank Name: The Ahmedabad Dist.Co.Op.Bank Ltd
             </Text>
             <Text style={styles.small}>Account Number: 607019119547</Text>
-            <Text style={styles.small}>IFSC: GSCB0ADC001</Text>
-            <Text style={{ fontWeight: "bold", marginTop: 4, marginBottom: 2 }}>
-              Notes:
-            </Text>
-            <Text style={styles.small}>
-              {invoice.notes || "Thanks for your business."}
-            </Text>
-            <Text style={{ fontWeight: "bold", marginTop: 4, marginBottom: 2 }}>
+            <Text style={styles.small}>IFSC Code: GSCB0ADC001</Text>
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 10,
+                marginTop: 4,
+                marginBottom: 2,
+              }}
+            >
               Terms & Conditions:
             </Text>
             <Text style={styles.small}>
-              General terms and conditions apply.
+              • Payment is due within 30 days of invoice date
+            </Text>
+            <Text style={styles.small}>
+              • All disputes must be reported within 7 days
+            </Text>
+            <Text style={styles.small}>
+              • Late payments may incur additional charges
+            </Text>
+            <Text style={styles.small}>
+              • Goods once delivered will not be taken back
             </Text>
           </View>
-          {/* Right: Tax summary */}
-          <View style={{ flex: 1, ...styles.summaryBox }}>
-            <Text>
-              Sub Total :{" "}
-              <Text style={styles.bold}>₹ {invoice.subtotal.toFixed(2)}</Text>
+          <View style={{ flex: 1, paddingLeft: 8 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 10, marginBottom: 2 }}>
+              Additional Notes:
             </Text>
-            {invoice.sgst > 0 && invoice.cgst > 0 && (
-              <>
-                <Text>
-                  SGST @ 9.0% :{" "}
-                  <Text style={styles.bold}>₹ {invoice.sgst.toFixed(2)}</Text>
-                </Text>
-                <Text>
-                  CGST @ 9.0% :{" "}
-                  <Text style={styles.bold}>₹ {invoice.cgst.toFixed(2)}</Text>
-                </Text>
-              </>
-            )}
-            {invoice.igst > 0 && (
-              <Text>
-                IGST @ 18.0% :{" "}
-                <Text style={styles.bold}>₹ {invoice.igst.toFixed(2)}</Text>
-              </Text>
-            )}
-            <Text
-              style={{
-                marginTop: 4,
-                backgroundColor: "#1976d2",
-                color: "#fff",
-                padding: 4,
-                fontWeight: "bold",
-              }}
-            >
-              Total : ₹ {invoice.totalAmount.toFixed(2)}
-            </Text>
+            <Text style={styles.small}>{safeInvoice.notes}</Text>
           </View>
         </View>
-        {/* Signature Row */}
+
+        {/* Signature */}
         <View style={styles.signature}>
-          <Text>For, MJ FABRICATION</Text>
+          <Text>MJ FABRICATION</Text>
           <Text
             style={{
-              marginTop: 24,
+              marginTop: 36,
               borderTop: 1,
               borderColor: "#222",
               width: 120,
@@ -404,9 +536,10 @@ const InvoicePDFDocument: React.FC<Props> = ({
             Authorized Signature
           </Text>
         </View>
-        {/* Footer note */}
+
+        {/* Footer */}
         <Text style={[styles.small, { marginTop: 12 }]}>
-          * This is a computer generated receipt.
+          * This is a computer generated invoice.
         </Text>
       </Page>
     </Document>
