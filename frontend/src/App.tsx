@@ -18,9 +18,9 @@ import InventoryManagement from "./pages/admin/InventoryManagement";
 import InquiryManagement from "./pages/admin/InquiryManagement";
 import Reports from "./pages/admin/Reports";
 import CompanyProfile from "./pages/admin/CompanyProfile";
-import ChatWidget from "./components/ChatWidget";
 import AuthGuard from "@/components/auth/AuthGuard";
 import AdminLayout from "./components/admin/AdminLayout";
+import ChatWidget from "@/components/ChatWidget"; // Import ChatWidget component
 
 const queryClient = new QueryClient();
 
@@ -60,7 +60,8 @@ const App = () => (
           <Route path="/gallery" element={<Gallery />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <ChatWidget />
+        {/* Only show ChatWidget on non-admin routes */}
+        {window.location.pathname.startsWith("/admin") ? null : <ChatWidget />}
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

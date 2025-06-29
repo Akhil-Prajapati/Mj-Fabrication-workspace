@@ -494,19 +494,21 @@ const CustomerManagement = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">
+    <div className="space-y-6 px-2 md:px-8 py-4 w-full max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 flex-wrap">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Customer Management
         </h1>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
+        <Button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="w-full md:w-auto"
+        >
           {showAddForm ? "Cancel" : "Add New Customer"}
         </Button>
       </div>
-
       {/* Add Customer Form */}
       {showAddForm && (
-        <Card>
+        <Card className="p-2 md:p-6">
           <CardHeader>
             <CardTitle>Add New Customer</CardTitle>
           </CardHeader>
@@ -757,16 +759,18 @@ const CustomerManagement = () => {
       )}
 
       {/* Search and Customer List */}
-      <Card>
+      <Card className="p-2 md:p-6">
         <CardHeader>
           <CardTitle>Customers</CardTitle>
         </CardHeader>
-        <CardContent>
-          <NinjaTable
-            columns={columns}
-            data={filteredCustomers}
-            pageSize={10}
-          />
+        <CardContent className="overflow-x-auto p-0">
+          <div className="min-w-[600px] w-full">
+            <NinjaTable
+              columns={columns}
+              data={filteredCustomers}
+              pageSize={10}
+            />
+          </div>
         </CardContent>
       </Card>
       {/* Customer Details Modal */}
@@ -774,17 +778,12 @@ const CustomerManagement = () => {
         open={isOpen}
         onOpenChange={(open) => (open ? onOpen() : onClose())}
       >
-        <DialogContent className="max-w-4xl w-full  overflow-y-auto">
+        <DialogContent className="max-w-4xl w-full overflow-y-auto p-2 md:p-6">
           <div className="sticky top-0 bg-white pb-4 ">
             <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">
               Customer Details
             </DialogTitle>
-            {/* <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </DialogClose> */}
           </div>
-
           <DialogDescription className="mt-4">
             {selectedCustomer && (
               <div className="space-y-6">
@@ -795,73 +794,73 @@ const CustomerManagement = () => {
                       Basic Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-4 p-6">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 md:p-6">
                     <div className="space-y-4">
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           Customer Name
                         </label>
-                        <p className="text-lg text-gray-900">
+                        <p className="text-lg text-gray-900 break-words">
                           {selectedCustomer.customerName}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           Company Name
                         </label>
-                        <p className="text-lg text-gray-900">
+                        <p className="text-lg text-gray-900 break-words">
                           {selectedCustomer.companyName || "-"}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           Email
                         </label>
-                        <p className="text-lg text-blue-600">
+                        <p className="text-lg text-blue-600 break-words">
                           {selectedCustomer.email}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           Phone
                         </label>
-                        <p className="text-lg text-gray-900">
+                        <p className="text-lg text-gray-900 break-words">
                           {selectedCustomer.phone}
                         </p>
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           GST Number
                         </label>
-                        <p className="text-lg text-blue-600 font-mono">
+                        <p className="text-lg text-blue-600 font-mono break-words">
                           {selectedCustomer.gstNumber || "-"}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           Customer Type
                         </label>
-                        <p className="text-lg text-gray-900 capitalize">
+                        <p className="text-lg text-gray-900 capitalize break-words">
                           {selectedCustomer.type}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           State Code
                         </label>
-                        <p className="text-lg text-gray-900">
+                        <p className="text-lg text-gray-900 break-words">
                           {stateList.find(
                             (s) => s.stateCode === selectedCustomer.stateCode
                           )?.stateName || selectedCustomer.stateCode}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-sm font-medium text-gray-500">
                           Created At
                         </label>
-                        <p className="text-lg text-gray-900">
+                        <p className="text-lg text-gray-900 break-words">
                           {new Date(
                             selectedCustomer.createdAt
                           ).toLocaleDateString("en-GB", {

@@ -5,6 +5,8 @@ import { toast } from "@/hooks/use-toast";
 import InvoiceForm from "@/components/invoices/InvoiceForm";
 import InvoiceList from "@/components/invoices/InvoiceList";
 import InvoicePreview from "@/components/invoices/InvoicePreview";
+import InvoicePDFDocument from "@/components/invoices/InvoicePDFDocument";
+import { pdf } from "@react-pdf/renderer";
 import { fetchCustomers, createInvoice } from "@/api/invoice";
 import { fetchInvoiceById } from "@/api/invoice-details";
 import { getInventoryItems } from "@/api/inventory";
@@ -151,7 +153,7 @@ const InvoiceGeneration = () => {
       // Map frontend items to backend InvoiceItemRequest
       const items = (invoiceData.items || []).map((item) => {
         return {
-          itemId: item.itemId || item.id || undefined, // use itemId for backend
+          itemId: item.id || item.itemId || undefined, // use itemId for backend
           quantity: item.quantity,
           unitPrice: item.rate,
           gstRate: item.gstRate,
@@ -387,14 +389,75 @@ const InvoiceGeneration = () => {
     }
   };
 
-  const handleDownloadInvoice = (invoice: Invoice) => {
-    if (invoice.fullData) {
-      setPreviewInvoice(invoice.fullData);
-      setShowPreview(true);
-    } else {
+  const handleDownloadInvoice = async (invoice: Invoice) => {
+    try {
+      let invoiceData = invoice.fullData;
+      if (!invoiceData) {
+        // Fetch full invoice details from backend
+        const response = await fetchInvoiceById(invoice.id);
+        if (!response || !response.id)
+          throw new Error("Invoice data not found");
+        // Defensive: ensure customerId exists and fetch customer
+        let customer = null;
+        if (response.customerId) {
+          customer = await fetchCustomerById(response.customerId, customers);
+        }
+        let items = [];
+        if (Array.isArray(response.items) && response.items.length > 0) {
+          items = response.items;
+        } else {
+          items = await fetchInvoiceItems(response);
+        }
+        invoiceData = mapInvoiceResponseToPreviewData(
+          response,
+          customer,
+          items
+        );
+      } else if (!invoiceData.customer || !invoiceData.customer.customerId) {
+        // Defensive: if fullData exists but is missing customer or customerId, try to fetch
+        let customer = null;
+        // Try to find customer by customerId (not name)
+        if (
+          invoiceData.customer &&
+          invoiceData.customer.customerId &&
+          Array.isArray(customers) &&
+          customers.length > 0
+        ) {
+          customer = customers.find(
+            (c) =>
+              c.customerId === invoiceData.customer.customerId ||
+              c.id === invoiceData.customer.customerId
+          );
+        }
+        invoiceData = { ...invoiceData, customer: customer || {} };
+      }
+      // Import indianStates dynamically for PDF
+      const { indianStates } = await import("@/api/indianStates");
+      // Generate PDF using @react-pdf/renderer
+      const blob = await pdf(
+        <InvoicePDFDocument invoice={invoiceData} indianStates={indianStates} />
+      ).toBlob();
+      // Trigger download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${
+        invoiceData.invoiceNumber || invoice.invoiceNumber
+      }.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err) {
       toast({
-        title: "Download Invoice",
-        description: `Downloading invoice ${invoice.invoiceNumber} as PDF`,
+        title: "Download Failed",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Could not download invoice PDF.",
+        variant: "destructive",
       });
     }
   };

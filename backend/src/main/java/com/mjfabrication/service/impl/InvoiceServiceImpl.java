@@ -10,6 +10,7 @@ import com.mjfabrication.payload.request.InvoiceItemRequest;
 import com.mjfabrication.payload.request.InvoiceRequest;
 import com.mjfabrication.payload.response.InvoiceItemResponse;
 import com.mjfabrication.payload.response.InvoiceResponse;
+import com.mjfabrication.payload.response.DashboardResponse;
 import com.mjfabrication.repository.InvoiceItemRepository;
 import com.mjfabrication.repository.InvoiceRepository;
 import com.mjfabrication.repository.CustomerRepository;
@@ -183,6 +184,70 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public void delete(UUID id) {
         invoiceRepository.deleteById(id);
+    }
+
+    @Override
+    public DashboardResponse getDashboardStats(int month, int year) {
+        DashboardResponse resp = new DashboardResponse();
+        // Get all invoices for the month/year
+        List<Invoice> invoices = invoiceRepository.findAll().stream()
+            .filter(inv -> inv.getInvoiceDate() != null &&
+                inv.getInvoiceDate().getMonthValue() == month &&
+                inv.getInvoiceDate().getYear() == year)
+            .collect(Collectors.toList());
+        // Stats
+        int totalInvoices = invoices.size();
+        double totalAmount = invoices.stream().mapToDouble(inv -> inv.getTotalAmount() != null ? inv.getTotalAmount().doubleValue() : 0).sum();
+        double paidAmount = invoices.stream().filter(inv -> inv.getStatus() == InvoiceStatus.PAID).mapToDouble(inv -> inv.getTotalAmount() != null ? inv.getTotalAmount().doubleValue() : 0).sum();
+        double overdueAmount = invoices.stream().filter(inv -> inv.getStatus() == InvoiceStatus.OVERDUE).mapToDouble(inv -> inv.getTotalAmount() != null ? inv.getTotalAmount().doubleValue() : 0).sum();
+        // Previous month for change
+        int prevMonth = month == 1 ? 12 : month - 1;
+        int prevYear = month == 1 ? year - 1 : year;
+        List<Invoice> prevInvoices = invoiceRepository.findAll().stream()
+            .filter(inv -> inv.getInvoiceDate() != null &&
+                inv.getInvoiceDate().getMonthValue() == prevMonth &&
+                inv.getInvoiceDate().getYear() == prevYear)
+            .collect(Collectors.toList());
+        int prevTotalInvoices = prevInvoices.size();
+        double prevTotalAmount = prevInvoices.stream().mapToDouble(inv -> inv.getTotalAmount() != null ? inv.getTotalAmount().doubleValue() : 0).sum();
+        // Stat cards
+        DashboardResponse.StatCard totalInvCard = new DashboardResponse.StatCard();
+        totalInvCard.setTitle("Total Invoices");
+        totalInvCard.setValue(String.valueOf(totalInvoices));
+        totalInvCard.setChange((totalInvoices - prevTotalInvoices) + "");
+        totalInvCard.setIcon("FileText");
+        DashboardResponse.StatCard totalAmtCard = new DashboardResponse.StatCard();
+        totalAmtCard.setTitle("Total Amount");
+        totalAmtCard.setValue(String.format("%.2f", totalAmount));
+        totalAmtCard.setChange(String.format("%.2f", totalAmount - prevTotalAmount));
+        totalAmtCard.setIcon("Package");
+        DashboardResponse.StatCard paidAmtCard = new DashboardResponse.StatCard();
+        paidAmtCard.setTitle("Paid Amount");
+        paidAmtCard.setValue(String.format("%.2f", paidAmount));
+        paidAmtCard.setChange("-");
+        paidAmtCard.setIcon("Check");
+        DashboardResponse.StatCard overdueAmtCard = new DashboardResponse.StatCard();
+        overdueAmtCard.setTitle("Overdue Amount");
+        overdueAmtCard.setValue(String.format("%.2f", overdueAmount));
+        overdueAmtCard.setChange("-");
+        overdueAmtCard.setIcon("AlertTriangle");
+        resp.setStats(List.of(totalInvCard, totalAmtCard, paidAmtCard, overdueAmtCard));
+        // Recent invoices (last 5)
+        List<DashboardResponse.InvoiceSummary> recent = invoices.stream()
+            .sorted((a, b) -> b.getInvoiceDate().compareTo(a.getInvoiceDate()))
+            .limit(5)
+            .map(inv -> {
+                DashboardResponse.InvoiceSummary sum = new DashboardResponse.InvoiceSummary();
+                sum.setId(inv.getId().toString());
+                sum.setCustomer(inv.getCustomer() != null ? inv.getCustomer().getCompanyName() : "");
+                sum.setAmount(inv.getTotalAmount() != null ? inv.getTotalAmount().toString() : "0");
+                sum.setStatus(inv.getStatus() != null ? inv.getStatus().name() : "");
+                sum.setDate(inv.getInvoiceDate() != null ? inv.getInvoiceDate().toString() : "");
+                return sum;
+            })
+            .collect(Collectors.toList());
+        resp.setRecentInvoices(recent);
+        return resp;
     }
 
     // Helper method
