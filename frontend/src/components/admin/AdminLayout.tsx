@@ -29,7 +29,7 @@ const AdminLayout = () => {
     { name: "Inquiry Management", path: "/admin/inquiries", icon: "📝" },
     { name: "Inventory Management", path: "/admin/inventory", icon: "📦" },
     { name: "Invoice Generation", path: "/admin/invoices", icon: "📄" },
-    { name: "Company Profile", path: "/admin/company", icon: "🏢" },
+    // { name: "Company Profile", path: "/admin/company", icon: "🏢" },
     { name: "Reports", path: "/admin/reports", icon: "📊" },
   ];
 
