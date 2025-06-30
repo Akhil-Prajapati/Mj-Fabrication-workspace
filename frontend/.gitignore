@@ -36,6 +36,12 @@ coverage/
 .env
 .env.*
 
+# Environment variables (keep .env for development, ignore production variants)
+.env.local
+.env.production.local
+.env.staging
+.env.staging.local
+
 # API and build
 # /src/api/
 /build
