@@ -2,15 +2,12 @@ package com.mjfabrication.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,12 +15,18 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    // Use a secure, base64-encoded 32-byte key for HS256
-    private final String SECRET_KEY = "bXlTdXBlclNlY3JldEtleU1qRmFicmljYXRpb25AMTIzNDU2Nzg5MDEyMzQ1Ng=="; // example only
-    private final long EXPIRATION = 1000 * 60 * 60 * 10; // 10 hours
+    // Use environment variables for JWT configuration
+    @Value("${JWT_SECRET:bXlTdXBlclNlY3JldEtleU1qRmFicmljYXRpb25AMTIzNDU2Nzg5MDEyMzQ1Ng==}")
+    private String secretKey;
+    
+    @Value("${JWT_ACCESS_TOKEN_EXPIRATION:604800000}") // 7 days default
+    private long accessTokenExpiration;
+    
+    @Value("${JWT_REFRESH_TOKEN_EXPIRATION:2592000000}") // 30 days default
+    private long refreshTokenExpiration;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = java.util.Base64.getDecoder().decode(SECRET_KEY);
+        byte[] keyBytes = java.util.Base64.getDecoder().decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -41,34 +44,80 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Return the expired claims for processing
+            return e.getClaims();
+        }
     }
 
     private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (Exception e) {
+            return true; // Consider any exception as expired
+        }
     }
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername());
+        return createToken(claims, userDetails.getUsername(), accessTokenExpiration);
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
+    public String generateRefreshToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "refresh");
+        return createToken(claims, userDetails.getUsername(), refreshTokenExpiration);
+    }
+
+    private String createToken(Map<String, Object> claims, String subject, long expiration) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
                 .compact();
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        try {
+            final String username = extractUsername(token);
+            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Token is expired
+            return false;
+        } catch (Exception e) {
+            // Token is invalid
+            return false;
+        }
+    }
+
+    public Boolean isTokenExpiredButValid(String token) {
+        try {
+            extractAllClaims(token);
+            return false; // Token is valid and not expired
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return true; // Token is expired but was valid
+        } catch (Exception e) {
+            return false; // Token is invalid
+        }
+    }
+
+    public String refreshToken(String expiredToken, UserDetails userDetails) {
+        try {
+            // Verify the token was valid (just expired)
+            if (isTokenExpiredButValid(expiredToken)) {
+                return generateToken(userDetails);
+            }
+        } catch (Exception e) {
+            // Token is completely invalid
+        }
+        return null;
     }
 }

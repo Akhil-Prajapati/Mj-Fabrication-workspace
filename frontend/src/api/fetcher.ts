@@ -46,6 +46,35 @@ export const fetchGis = async (
   kyOptions?: Parameters<typeof ky>[1]
 ) => ky.get(url, { headers: await gisHeaders(), credentials: "include" });
 
+// Auto-refresh token on 401 errors
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: any) => void;
+  reject: (error: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+const refreshToken = async (): Promise<boolean> => {
+  try {
+    const response = await ky.post(joinUrl(BASE_URL, "auth/refresh"), {
+      credentials: "include",
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const fetcher = async (
   {
     path,
@@ -60,12 +89,11 @@ export const fetcher = async (
       data: await e(kyOptions.json as object),
     };
   }
+  
   let json: JsonResult | undefined;
-  try {
-    if (shouldShowLoader) {
-      nProgress.start();
-    }
-    json = await ky(joinUrl(BASE_URL, path), {
+  
+  const makeRequest = async (): Promise<JsonResult> => {
+    return await ky(joinUrl(BASE_URL, path), {
       method: kyOptions.method ?? "POST",
       headers: {
         ...kyOptions.headers,
@@ -75,15 +103,73 @@ export const fetcher = async (
       credentials: "include",
       ...kyOptions,
     }).json<JsonResult>();
+  };
+
+  try {
+    if (shouldShowLoader) {
+      nProgress.start();
+    }
+    
+    json = await makeRequest();
+    
   } catch (err) {
     if (kyOptions.signal?.aborted) {
       return null;
     }
+    
     if (err instanceof HTTPError) {
       const { response } = err;
+      
       if (response.status === 401) {
-        destroySession();
-        return null;
+        // Check if it's a token expiration error
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (errorData.code === "TOKEN_EXPIRED" && !isRefreshing) {
+          isRefreshing = true;
+          
+          try {
+            const refreshSuccess = await refreshToken();
+            
+            if (refreshSuccess) {
+              processQueue(null);
+              isRefreshing = false;
+              
+              // Retry the original request
+              try {
+                json = await makeRequest();
+              } catch (retryErr) {
+                if (retryErr instanceof HTTPError && retryErr.response.status === 401) {
+                  destroySession();
+                  window.location.href = "/login";
+                }
+                throw retryErr;
+              }
+            } else {
+              processQueue(new Error("Token refresh failed"));
+              isRefreshing = false;
+              destroySession();
+              window.location.href = "/login";
+              return null;
+            }
+          } catch (refreshError) {
+            processQueue(refreshError);
+            isRefreshing = false;
+            destroySession();
+            window.location.href = "/login";
+            return null;
+          }
+        } else if (isRefreshing) {
+          // If a refresh is already in progress, queue this request
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          }).then(() => {
+            return makeRequest();
+          });
+        } else {
+          destroySession();
+          window.location.href = "/login";
+          return null;
+        }
       } else if (response.status >= 400 && response.status <= 500) {
         return await response.json();
       } else {
@@ -98,9 +184,11 @@ export const fetcher = async (
       nProgress.done();
     }
   }
+  
   if (!shouldDecrypt) {
     return json;
   }
+  
   // Try to decrypt, but if fails, fallback to plain JSON
   try {
     const encJsonString = json?.message;
@@ -110,6 +198,31 @@ export const fetcher = async (
   } catch (err) {
     // If decryption or parsing fails, assume backend returned plain JSON
     return json;
+  }
+};
+
+// Manual token refresh utility
+export const manualRefreshToken = async (): Promise<boolean> => {
+  try {
+    const response = await ky.post(joinUrl(BASE_URL, "auth/refresh"), {
+      credentials: "include",
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Manual token refresh failed:", error);
+    return false;
+  }
+};
+
+// Check token validity
+export const verifyToken = async (): Promise<boolean> => {
+  try {
+    const response = await ky.post(joinUrl(BASE_URL, "auth/verify"), {
+      credentials: "include",
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
   }
 };
 
