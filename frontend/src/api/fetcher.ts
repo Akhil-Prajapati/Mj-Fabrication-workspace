@@ -89,9 +89,9 @@ export const fetcher = async (
       data: await e(kyOptions.json as object),
     };
   }
-  
+
   let json: JsonResult | undefined;
-  
+
   const makeRequest = async (): Promise<JsonResult> => {
     return await ky(joinUrl(BASE_URL, path), {
       method: kyOptions.method ?? "POST",
@@ -109,36 +109,38 @@ export const fetcher = async (
     if (shouldShowLoader) {
       nProgress.start();
     }
-    
+
     json = await makeRequest();
-    
   } catch (err) {
     if (kyOptions.signal?.aborted) {
       return null;
     }
-    
+
     if (err instanceof HTTPError) {
       const { response } = err;
-      
+
       if (response.status === 401) {
         // Check if it's a token expiration error
         const errorData = await response.json().catch(() => ({}));
-        
+
         if (errorData.code === "TOKEN_EXPIRED" && !isRefreshing) {
           isRefreshing = true;
-          
+
           try {
             const refreshSuccess = await refreshToken();
-            
+
             if (refreshSuccess) {
               processQueue(null);
               isRefreshing = false;
-              
+
               // Retry the original request
               try {
                 json = await makeRequest();
               } catch (retryErr) {
-                if (retryErr instanceof HTTPError && retryErr.response.status === 401) {
+                if (
+                  retryErr instanceof HTTPError &&
+                  retryErr.response.status === 401
+                ) {
                   destroySession();
                   window.location.href = "/login";
                 }
@@ -184,11 +186,11 @@ export const fetcher = async (
       nProgress.done();
     }
   }
-  
+
   if (!shouldDecrypt) {
     return json;
   }
-  
+
   // Try to decrypt, but if fails, fallback to plain JSON
   try {
     const encJsonString = json?.message;

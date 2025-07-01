@@ -9,16 +9,19 @@
 ### 1. **Backend JWT Configuration Updates**
 
 #### A. Extended Token Expiration
+
 - **Before**: 10 hours token expiration
 - **After**: 7 days token expiration (matching cookie duration)
 - **Configurable**: Via environment variables
 
 #### B. Improved Error Handling
+
 - Added graceful handling of expired JWT tokens
 - Proper exception catching in JWT validation
 - Clear error responses with error codes
 
 #### C. Token Refresh Mechanism
+
 - Added `/api/v1/auth/refresh` endpoint
 - Automatic token renewal for expired but valid tokens
 - Maintains user sessions seamlessly
@@ -26,11 +29,13 @@
 ### 2. **Frontend Auto-Refresh Implementation**
 
 #### A. Smart Token Management
+
 - Automatic token refresh on 401 errors
 - Queue system for concurrent requests during refresh
 - Graceful fallback to login page if refresh fails
 
 #### B. React Hook for Token Management
+
 - `useTokenManager` hook for authentication state
 - Periodic token validation (every 30 minutes)
 - Manual refresh capability
@@ -38,6 +43,7 @@
 ### 3. **Environment-Based Configuration**
 
 #### A. JWT Settings in .env
+
 ```bash
 JWT_SECRET=your-secure-jwt-secret-key
 JWT_ACCESS_TOKEN_EXPIRATION=604800000   # 7 days
@@ -45,6 +51,7 @@ JWT_REFRESH_TOKEN_EXPIRATION=2592000000 # 30 days
 ```
 
 #### B. Production Security
+
 - Environment-based JWT secret
 - Configurable expiration times
 - Secure cookie settings
@@ -54,12 +61,14 @@ JWT_REFRESH_TOKEN_EXPIRATION=2592000000 # 30 days
 ### Backend Changes:
 
 1. **JwtUtil.java** - Enhanced JWT utility with:
+
    - Environment variable configuration
    - Extended token expiration (7 days)
    - Token refresh capability
    - Better error handling
 
 2. **JwtAuthenticationFilter.java** - Improved filter with:
+
    - Proper exception handling for expired tokens
    - Clear error responses with error codes
    - Skip auth validation for auth endpoints
@@ -71,6 +80,7 @@ JWT_REFRESH_TOKEN_EXPIRATION=2592000000 # 30 days
 ### Frontend Changes:
 
 1. **fetcher.ts** - Enhanced API client with:
+
    - Automatic token refresh on 401 errors
    - Request queuing during refresh
    - Proper error handling
@@ -83,6 +93,7 @@ JWT_REFRESH_TOKEN_EXPIRATION=2592000000 # 30 days
 ## 📋 Configuration Steps
 
 ### 1. Backend Setup
+
 ```bash
 # Copy environment template
 cp backend/.env.template backend/.env
@@ -94,16 +105,17 @@ JWT_REFRESH_TOKEN_EXPIRATION=2592000000 # 30 days
 ```
 
 ### 2. Frontend Integration
+
 ```tsx
 // Use the token manager hook in your app
-import { useTokenManager } from '@/hooks/use-token-manager';
+import { useTokenManager } from "@/hooks/use-token-manager";
 
 function App() {
   const { isAuthenticated, isLoading, logout } = useTokenManager();
-  
+
   if (isLoading) return <div>Loading...</div>;
   if (!isAuthenticated) return <LoginPage />;
-  
+
   return <MainApp onLogout={logout} />;
 }
 ```
@@ -111,6 +123,7 @@ function App() {
 ## 🔄 How It Works
 
 ### Token Lifecycle:
+
 1. **Login**: User gets 7-day JWT token + 7-day cookie
 2. **API Calls**: Token is automatically sent via cookie
 3. **Token Expiry**: Frontend detects 401 + TOKEN_EXPIRED code
@@ -119,6 +132,7 @@ function App() {
 6. **Retry Request**: Original API call is retried with new token
 
 ### Error Scenarios:
+
 - **Token Expired**: Auto-refresh → Continue session
 - **Token Invalid**: Redirect to login
 - **Refresh Failed**: Clear session → Redirect to login
@@ -135,6 +149,7 @@ function App() {
 ## 🔍 Testing the Fix
 
 ### Manual Testing:
+
 1. Login to the application
 2. Wait for token to expire (or manually set short expiration)
 3. Make an API call - should auto-refresh
@@ -142,6 +157,7 @@ function App() {
 5. Verify session continues without interruption
 
 ### Monitoring:
+
 ```bash
 # Check backend logs for token refresh attempts
 tail -f app.log | grep "refresh"
@@ -163,11 +179,13 @@ tail -f app.log | grep "JWT expired"
 ### Common Issues:
 
 1. **Still Getting Expired Tokens**:
+
    - Clear browser cookies and login again
    - Check if .env configuration is loaded
    - Verify JWT_ACCESS_TOKEN_EXPIRATION setting
 
 2. **Infinite Refresh Loop**:
+
    - Check FRONTEND_URL in backend .env
    - Verify CORS configuration
    - Check browser console for network errors
