@@ -57,10 +57,10 @@ public class AuthController {
         // Set JWT as HttpOnly cookie
         Cookie cookie = new Cookie("token", token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false); // set to false for development (allows HTTP)
+        cookie.setSecure(true); // set to true for production (HTTPS required)
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60); // 1 week
-        cookie.setAttribute("SameSite", "Lax"); // Lax is more forgiving for local dev
+        cookie.setAttribute("SameSite", "None"); // None required for cross-origin requests in production
         response.addCookie(cookie);
         com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
                 null, // accessToken (do not return token in body for cookie-based auth)
@@ -134,10 +134,10 @@ public class AuthController {
                 // Set new JWT as HttpOnly cookie
                 Cookie cookie = new Cookie("token", newToken);
                 cookie.setHttpOnly(true);
-                cookie.setSecure(false); // set to true in production
+                cookie.setSecure(true); // set to true in production
                 cookie.setPath("/");
                 cookie.setMaxAge(7 * 24 * 60 * 60); // 1 week
-                cookie.setAttribute("SameSite", "Lax");
+                cookie.setAttribute("SameSite", "None");
                 response.addCookie(cookie);
                 
                 return ResponseEntity.ok(Map.of("message", "Token refreshed successfully"));
@@ -154,10 +154,10 @@ public class AuthController {
         // Invalidate the JWT cookie
         Cookie cookie = new Cookie("token", null);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false); // set to true in production
+        cookie.setSecure(true); // set to true in production
         cookie.setPath("/");
         cookie.setMaxAge(0); // Expire immediately
-        cookie.setAttribute("SameSite", "Lax");
+        cookie.setAttribute("SameSite", "None");
         response.addCookie(cookie);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
