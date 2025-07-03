@@ -35,11 +35,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Extract JWT from cookie
+        // Extract JWT from Authorization header or cookie (fallback)
         String jwt = null;
         String username = null;
         
-        if (request.getCookies() != null) {
+        // First try Authorization header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7);
+        }
+        
+        // Fallback to cookie if no Authorization header
+        if (jwt == null && request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("token".equals(cookie.getName())) {
                     jwt = cookie.getValue();

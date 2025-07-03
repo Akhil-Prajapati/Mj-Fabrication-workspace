@@ -54,16 +54,9 @@ public class AuthController {
             }
         }
         String token = jwtUtil.generateToken(userDetails);
-        // Set JWT as HttpOnly cookie
-        Cookie cookie = new Cookie("token", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true); // set to true for production (HTTPS required)
-        cookie.setPath("/");
-        cookie.setMaxAge(7 * 24 * 60 * 60); // 1 week
-        cookie.setAttribute("SameSite", "Lax"); // Lax works better for cross-origin in some browsers
-        response.addCookie(cookie);
+        // For cross-origin compatibility, return token in response body instead of cookie
         com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
-                null, // accessToken (do not return token in body for cookie-based auth)
+                token, // Return token in response body for cross-origin compatibility
                 null, // refreshToken
                 "Bearer", // tokenType
                 null, // userId (set if available)
@@ -80,7 +73,15 @@ public class AuthController {
     @PostMapping("/verify")
     public ResponseEntity<?> verifyToken(jakarta.servlet.http.HttpServletRequest request) {
         String token = null;
-        if (request.getCookies() != null) {
+        
+        // First try Authorization header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+        
+        // Fallback to cookie if no Authorization header
+        if (token == null && request.getCookies() != null) {
             for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
                 if ("token".equals(cookie.getName())) {
                     token = cookie.getValue();
@@ -88,6 +89,7 @@ public class AuthController {
                 }
             }
         }
+        
         if (token == null) {
             return ResponseEntity.status(401).body(Map.of("verified", false, "error", "No token"));
         }

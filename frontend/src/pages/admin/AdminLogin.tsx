@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { login } from "@/api/fetcher";
-import { log } from "node:console";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -32,7 +31,7 @@ const AdminLogin = () => {
         });
         return;
       }
-      // If no error is returned, login is successful (cookie is set)
+      // If no error is returned, login is successful (token is stored in localStorage)
       toast({
         title: "Login Successful",
         description: "Welcome to MJ Fabrication Admin Panel",
@@ -40,21 +39,14 @@ const AdminLogin = () => {
       navigate("/admin/dashboard");
     } catch (err: any) {
       if (err?.response?.status === 401) {
-        // Call backend logout endpoint to expire the cookie
-        fetch("/api/v1/auth/logout", {
-          method: "POST",
-          credentials: "include",
-        });
-        // Optionally clear local/session storage
+        // Clear localStorage on authentication failure
         localStorage.clear();
         sessionStorage.clear();
         toast({
           title: "Login Failed",
-          description: "Invalid username or password. Please login again.",
+          description: "Invalid username or password. Please try again.",
           variant: "destructive",
         });
-        // Reload page to force re-authentication
-        setTimeout(() => window.location.reload(), 1000);
       } else {
         toast({
           title: "Login Failed",
@@ -73,8 +65,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     const handleUnload = () => {
-      // Fire and forget logout request
-      navigator.sendBeacon && navigator.sendBeacon("/api/v1/auth/logout");
+      // Clear localStorage on page unload
       localStorage.clear();
       sessionStorage.clear();
     };

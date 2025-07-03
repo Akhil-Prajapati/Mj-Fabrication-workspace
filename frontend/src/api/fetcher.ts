@@ -5,8 +5,9 @@ import { e, d } from "@/utils/crypto";
 // Placeholder for fingerprint util (replace with your actual implementation)
 const getFingerprint = () => "dev-fingerprint";
 
-// Remove token utils for cookie-based auth
-// const getToken = () => localStorage.getItem("token") || "";
+// Token utils for localStorage-based auth
+const getToken = () => localStorage.getItem("token") || "";
+const setToken = (token: string) => localStorage.setItem("token", token);
 const destroySession = () => localStorage.removeItem("token");
 
 interface FetcherProps {
@@ -66,9 +67,15 @@ const processQueue = (error: any, token: string | null = null) => {
 
 const refreshToken = async (): Promise<boolean> => {
   try {
+    const token = getToken();
     const response = await ky.post(joinUrl(BASE_URL, "auth/refresh"), {
-      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+    const data = await response.json() as any;
+    if (data.token) {
+      setToken(data.token);
+      return true;
+    }
     return response.ok;
   } catch (error) {
     return false;
@@ -93,14 +100,15 @@ export const fetcher = async (
   let json: JsonResult | undefined;
 
   const makeRequest = async (): Promise<JsonResult> => {
+    const token = getToken();
     return await ky(joinUrl(BASE_URL, path), {
       method: kyOptions.method ?? "POST",
       headers: {
         ...kyOptions.headers,
+        ...(token && { Authorization: `Bearer ${token}` }),
         fp: getFingerprint(),
       },
       timeout: false,
-      credentials: "include",
       ...kyOptions,
     }).json<JsonResult>();
   };
@@ -206,9 +214,15 @@ export const fetcher = async (
 // Manual token refresh utility
 export const manualRefreshToken = async (): Promise<boolean> => {
   try {
+    const token = getToken();
     const response = await ky.post(joinUrl(BASE_URL, "auth/refresh"), {
-      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+    const data = await response.json() as any;
+    if (data.token) {
+      setToken(data.token);
+      return true;
+    }
     return response.ok;
   } catch (error) {
     console.error("Manual token refresh failed:", error);
@@ -219,8 +233,11 @@ export const manualRefreshToken = async (): Promise<boolean> => {
 // Check token validity
 export const verifyToken = async (): Promise<boolean> => {
   try {
+    const token = getToken();
+    if (!token) return false;
+    
     const response = await ky.post(joinUrl(BASE_URL, "auth/verify"), {
-      credentials: "include",
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.ok;
   } catch (error) {
@@ -267,7 +284,7 @@ export const fetchUserProfile = async () => {
 // Example: Login API call (no encryption on request, but decrypt response)
 export const login = async (username: string, password: string) => {
   try {
-    return await fetcher(
+    const result = await fetcher(
       {
         path: "auth/login", // Remove leading /api or /api/v1
         shouldEncrypt: false,
@@ -279,6 +296,13 @@ export const login = async (username: string, password: string) => {
         json: { username, password },
       }
     );
+    
+    // Store the token if login is successful
+    if (result && result.accessToken) {
+      setToken(result.accessToken);
+    }
+    
+    return result;
   } catch (error) {
     console.error("Login error:", error);
     return { error: "Login failed", details: error };
