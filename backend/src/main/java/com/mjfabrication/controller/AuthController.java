@@ -5,6 +5,9 @@ import com.mjfabrication.payload.request.AuthRequest;
 import com.mjfabrication.payload.response.AuthResponse;
 import com.mjfabrication.util.JwtUtil;
 import com.mjfabrication.util.CryptoService;
+import com.mjfabrication.util.PasswordDebugUtil;
+import com.mjfabrication.entity.User;
+import com.mjfabrication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,10 +40,24 @@ public class AuthController {
     private CryptoService cryptoService;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PasswordDebugUtil passwordDebugUtil;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
         logger.info("Login attempt for username: {}", authRequest.getUsername());
+        
+        // Debug password before authentication
+        try {
+            User user = userRepository.findByUsername(authRequest.getUsername()).orElse(null);
+            if (user != null) {
+                passwordDebugUtil.debugPasswordMatch(authRequest.getPassword(), user.getPassword());
+            }
+        } catch (Exception debugEx) {
+            logger.warn("Could not debug password for user: {}", authRequest.getUsername(), debugEx);
+        }
         
         try {
             logger.debug("Attempting authentication for user: {}", authRequest.getUsername());
