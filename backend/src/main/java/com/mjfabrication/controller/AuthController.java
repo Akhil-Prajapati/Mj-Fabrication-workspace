@@ -1,123 +1,67 @@
 package com.mjfabrication.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mjfabrication.payload.request.AuthRequest;
-import com.mjfabrication.payload.response.AuthResponse;
 import com.mjfabrication.util.JwtUtil;
-import com.mjfabrication.util.CryptoService;
-import com.mjfabrication.util.PasswordDebugUtil;
-import com.mjfabrication.entity.User;
-import com.mjfabrication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-    
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
     private UserDetailsService userDetailsService;
     @Autowired
     private JwtUtil jwtUtil;
-    @Autowired
-    private CryptoService cryptoService;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private PasswordDebugUtil passwordDebugUtil;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
-        logger.info("Login attempt for username: {}", authRequest.getUsername());
-        
-        // Debug password before authentication
         try {
-            User user = userRepository.findByUsername(authRequest.getUsername()).orElse(null);
-            if (user != null) {
-                passwordDebugUtil.debugPasswordMatch(authRequest.getPassword(), user.getPassword());
-            }
-        } catch (Exception debugEx) {
-            logger.warn("Could not debug password for user: {}", authRequest.getUsername(), debugEx);
-        }
-        
-        try {
-            logger.debug("Attempting authentication for user: {}", authRequest.getUsername());
-            
-            Authentication authentication = authenticationManager.authenticate(
+            authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
-            
-            logger.info("Authentication successful for user: {}", authRequest.getUsername());
-            logger.debug("Authentication details: {}", authentication.getDetails());
-            
         } catch (Exception ex) {
-            logger.error("Authentication failed for user: {} - Error: {}", authRequest.getUsername(), ex.getMessage());
             // Return a clear error for invalid credentials
             return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
         }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
         
-        try {
-            logger.debug("Loading user details for: {}", authRequest.getUsername());
-            UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
-            logger.info("User details loaded successfully for: {}", authRequest.getUsername());
-            logger.debug("User authorities: {}", userDetails.getAuthorities());
-            
-            // Get role from userDetails (convert to UserRole if needed)
-            String roleStr = userDetails.getAuthorities().stream().findFirst().map(Object::toString).orElse(null);
-            logger.debug("Role string extracted: {}", roleStr);
-            
-            com.mjfabrication.enums.UserRole role = null;
-            if (roleStr != null) {
-                try {
-                    role = com.mjfabrication.enums.UserRole.valueOf(roleStr);
-                    logger.debug("Role enum converted: {}", role);
-                } catch (Exception ignored) {
-                    logger.warn("Failed to convert role string to enum: {}", roleStr);
-                }
+        // Get role from userDetails (convert to UserRole if needed)
+        String roleStr = userDetails.getAuthorities().stream().findFirst().map(Object::toString).orElse(null);
+        com.mjfabrication.enums.UserRole role = null;
+        if (roleStr != null) {
+            try {
+                role = com.mjfabrication.enums.UserRole.valueOf(roleStr);
+            } catch (Exception ignored) {
             }
-            
-            logger.debug("Generating JWT token for user: {}", authRequest.getUsername());
-            String token = jwtUtil.generateToken(userDetails);
-            logger.info("JWT token generated successfully for user: {}", authRequest.getUsername());
-            
-            // For cross-origin compatibility, return token in response body instead of cookie
-            com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
-                    token, // Return token in response body for cross-origin compatibility
-                    null, // refreshToken
-                    "Bearer", // tokenType
-                    null, // userId (set if available)
-                    userDetails.getUsername(), // username
-                    null, // email
-                    null, // firstName
-                    null, // lastName
-                    role // role (UserRole enum)
-            );
-            
-            logger.info("Login successful for user: {} - Returning response", authRequest.getUsername());
-            return ResponseEntity.ok(authResponse);
-            
-        } catch (Exception ex) {
-            logger.error("Error during login process for user: {} - Error: {}", authRequest.getUsername(), ex.getMessage(), ex);
-            return ResponseEntity.status(500).body(Map.of("error", "Internal server error during login"));
         }
+        
+        String token = jwtUtil.generateToken(userDetails);
+        
+        // For cross-origin compatibility, return token in response body instead of cookie
+        com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
+                token, // Return token in response body for cross-origin compatibility
+                null, // refreshToken
+                "Bearer", // tokenType
+                null, // userId (set if available)
+                userDetails.getUsername(), // username
+                null, // email
+                null, // firstName
+                null, // lastName
+                role // role (UserRole enum)
+        );
+        
+        return ResponseEntity.ok(authResponse);
     }
     // In AuthController.java
 
