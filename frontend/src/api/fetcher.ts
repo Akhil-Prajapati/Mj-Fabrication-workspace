@@ -142,7 +142,7 @@ export const fetcher = async (
                   retryErr.response.status === 401
                 ) {
                   destroySession();
-                  window.location.href = "/login";
+                  window.location.href = "/admin";
                 }
                 throw retryErr;
               }
@@ -150,14 +150,14 @@ export const fetcher = async (
               processQueue(new Error("Token refresh failed"));
               isRefreshing = false;
               destroySession();
-              window.location.href = "/login";
+              window.location.href = "/admin";
               return null;
             }
           } catch (refreshError) {
             processQueue(refreshError);
             isRefreshing = false;
             destroySession();
-            window.location.href = "/login";
+            window.location.href = "/admin";
             return null;
           }
         } else if (isRefreshing) {
@@ -169,7 +169,7 @@ export const fetcher = async (
           });
         } else {
           destroySession();
-          window.location.href = "/login";
+          window.location.href = "/admin";
           return null;
         }
       } else if (response.status >= 400 && response.status <= 500) {

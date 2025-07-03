@@ -18,7 +18,7 @@ export const useTokenManager = () => {
 
         if (!refreshSuccess) {
           // Redirect to login if refresh fails
-          window.location.href = "/login";
+          window.location.href = "/admin";
         }
       }
     } catch (error) {
@@ -52,7 +52,7 @@ export const useTokenManager = () => {
       console.error("Logout error:", error);
     } finally {
       setIsAuthenticated(false);
-      window.location.href = "/login";
+      window.location.href = "/admin";
     }
   };
 
