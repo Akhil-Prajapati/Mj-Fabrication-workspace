@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
@@ -7,20 +7,10 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from '@/components/ui/carousel';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import Autoplay from 'embla-carousel-autoplay';
-
-// Import images using relative paths
-import doorImg from '../../../public/img/door.png';
-import railingsImg from '../../../public/img/railings.png';
-import windowImg from '../../../public/img/window.png';
-import window2Img from '../../../public/img/window2.png';
-import gateImg from '../../../public/img/gate.png';
-import gate2Img from '../../../public/img/gate2.png';
-import petrolpumpImg from '../../../public/img/petrolpump.png';
-import shadeImg from '../../../public/img/shade.png';
+} from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import Autoplay from "embla-carousel-autoplay";
 
 const HeroCarousel = () => {
   const [api, setApi] = useState<CarouselApi>();
@@ -29,68 +19,75 @@ const HeroCarousel = () => {
   const slides = [
     {
       id: 1,
-      image: windowImg,
+      image: "/optimized/window.png",
       title: "MS Windows Fabrication",
       subtitle: "Premium Quality Metal Window Frames",
-      description: "Custom MS windows with precision engineering and modern design",
-      cta: "Get Quote"
+      description:
+        "Custom MS windows with precision engineering and modern design",
+      cta: "Get Quote",
     },
     {
       id: 2,
-      image: doorImg,
+      image: "/optimized/door.png",
       title: "MS Doors Manufacturing",
       subtitle: "Heavy Duty Metal Doors",
-      description: "Robust MS doors for residential and commercial applications",
-      cta: "View Products"
+      description:
+        "Robust MS doors for residential and commercial applications",
+      cta: "View Products",
     },
     {
       id: 3,
-      image: shadeImg,
+      image: "/optimized/shade.png",
       title: "MS Shade Solutions",
       subtitle: "Industrial Shade Structures",
-      description: "Durable metal shade solutions for parking and outdoor areas",
-      cta: "Learn More"
+      description:
+        "Durable metal shade solutions for parking and outdoor areas",
+      cta: "Learn More",
     },
     {
       id: 4,
-      image: railingsImg,
+      image: "/optimized/railings.png",
       title: "MS Railings & Handrails",
       subtitle: "Safety with Style",
       description: "Custom MS railings for staircases, balconies, and walkways",
-      cta: "Explore Designs"
+      cta: "Explore Designs",
     },
     {
       id: 5,
-      image: gateImg,
+      image: "/optimized/gate.png",
       title: "MS Gates & Grills",
       subtitle: "Security & Aesthetics Combined",
-      description: "Heavy-duty MS gates and decorative grills for complete security",
-      cta: "Get Estimate"
+      description:
+        "Heavy-duty MS gates and decorative grills for complete security",
+      cta: "Get Estimate",
     },
     {
       id: 6,
-      image: window2Img,
+      image: "/optimized/window2.png",
       title: "MS Windows Fabrication",
       subtitle: "Premium Quality Metal Window Frames",
-      description: "Custom MS windows with precision engineering and modern design 2",
-      cta: "Get Quote"
+      description:
+        "Custom MS windows with precision engineering and modern design 2",
+      cta: "Get Quote",
     },
     {
       id: 7,
-      image: gate2Img,
+      image: "/optimized/gate2.png",
       title: "MS Gates & Grills",
       subtitle: "Security & Aesthetics Combined",
-      description: "Heavy-duty MS gates and decorative grills for complete security 2",
-      cta: "Get Estimate"
+      description:
+        "Heavy-duty MS gates and decorative grills for complete security 2",
+      cta: "Get Estimate",
     },
     {
       id: 8,
-      image: petrolpumpImg,
+      image: "/optimized/petrolpump.png",
       title: "MS Petrol Pump Structures",
       subtitle: "Durable and Safe Petrol Pump Structures",
-      description: "Custom MS solutions for petrol pumps ensuring durability and safety",
-      cta: "Learn More"
-    }
+      description:
+        "Custom MS solutions for petrol pumps ensuring durability and safety",
+      cta: "Learn More",
+    },
   ];
 
   useEffect(() => {
@@ -139,7 +136,11 @@ const HeroCarousel = () => {
                     <p className="text-lg md:text-xl mb-8 text-gray-200">
                       {slide.description}
                     </p>
-                    <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
                       <Link to="/contact">{slide.cta}</Link>
                     </Button>
                   </div>
@@ -158,7 +159,7 @@ const HeroCarousel = () => {
           <button
             key={index}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === current ? 'bg-white' : 'bg-white/50'
+              index === current ? "bg-white" : "bg-white/50"
             }`}
             onClick={() => api?.scrollTo(index)}
           />

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPhone Storage Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📱 iPhone Storage Test</h2>
+        <p>Test localStorage and authentication specifically on iPhone/iOS devices</p>
+        
+        <button onclick="testStorageBasic()">Basic Storage Test</button>
+        <button onclick="testStoragePrivate()">Private Mode Test</button>
+        <button onclick="testStorageLarge()">Large Data Test</button>
+        <button onclick="testStorageQuota()">Storage Quota Test</button>
+        <button onclick="testLoginFlow()">Full Login Test</button>
+        <button onclick="clearAll()">Clear All Data</button>
+        
+        <div id="result" class="result">Ready to test...</div>
+    </div>
+
+    <script>
+        const API_URL = 'https://mj-fabrication-workspace-production.up.railway.app/api/v1';
+        
+        function log(message, type = 'info') {
+            const result = document.getElementById('result');
+            const timestamp = new Date().toLocaleTimeString();
+            result.innerHTML = `[${timestamp}] ${message}`;
+            result.className = `result ${type}`;
+            console.log(message);
+        }
+        
+        function testStorageBasic() {
+            log('🔍 Testing basic localStorage...', 'info');
+            
+            try {
+                // Test if localStorage is available
+                if (typeof(Storage) === "undefined") {
+                    log('❌ localStorage is not supported', 'error');
+                    return;
+                }
+                
+                // Test basic operations
+                const testKey = 'test_' + Date.now();
+                const testValue = 'Hello World';
+                
+                localStorage.setItem(testKey, testValue);
+                const retrieved = localStorage.getItem(testKey);
+                localStorage.removeItem(testKey);
+                
+                if (retrieved === testValue) {
+                    log('✅ Basic localStorage works fine', 'success');
+                } else {
+                    log(`❌ localStorage failed: stored "${testValue}" but got "${retrieved}"`, 'error');
+                }
+                
+                // Test JSON storage
+                const jsonData = { name: 'Test', value: 123, array: [1, 2, 3] };
+                localStorage.setItem('json_test', JSON.stringify(jsonData));
+                const jsonRetrieved = JSON.parse(localStorage.getItem('json_test'));
+                localStorage.removeItem('json_test');
+                
+                if (JSON.stringify(jsonData) === JSON.stringify(jsonRetrieved)) {
+                    log('✅ JSON storage works fine', 'success');
+                } else {
+                    log('❌ JSON storage failed', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Basic storage test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testStoragePrivate() {
+            log('🔒 Testing private mode detection...', 'info');
+            
+            try {
+                // Test 1: Try to store data
+                localStorage.setItem('private_test', 'test_value');
+                const canStore = localStorage.getItem('private_test') === 'test_value';
+                localStorage.removeItem('private_test');
+                
+                // Test 2: Storage quota (iOS Safari in private mode has very limited quota)
+                let quotaTest = 'unknown';
+                try {
+                    const testData = 'x'.repeat(1024 * 1024); // 1MB
+                    localStorage.setItem('quota_test', testData);
+                    localStorage.removeItem('quota_test');
+                    quotaTest = 'large_data_ok';
+                } catch (e) {
+                    quotaTest = 'limited_quota';
+                }
+                
+                // Test 3: Check navigator.storage (if available)
+                let storageEstimate = 'not_available';
+                if (navigator.storage && navigator.storage.estimate) {
+                    navigator.storage.estimate().then(estimate => {
+                        storageEstimate = estimate;
+                        log(`💾 Storage estimate: ${JSON.stringify(estimate, null, 2)}`, 'info');
+                    }).catch(() => {
+                        storageEstimate = 'estimate_failed';
+                    });
+                }
+                
+                log(`🔒 Private Mode Test Results:
+- Can store data: ${canStore}
+- Quota test: ${quotaTest}
+- Storage estimate: ${storageEstimate}
+- User agent: ${navigator.userAgent}
+- Platform: ${navigator.platform}`, canStore ? 'success' : 'warning');
+                
+            } catch (error) {
+                log(`❌ Private mode test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testStorageLarge() {
+            log('📦 Testing large data storage...', 'info');
+            
+            try {
+                const sizes = [1024, 1024 * 10, 1024 * 100, 1024 * 500]; // 1KB to 500KB
+                const results = [];
+                
+                for (const size of sizes) {
+                    try {
+                        const testData = 'x'.repeat(size);
+                        const key = `large_test_${size}`;
+                        
+                        localStorage.setItem(key, testData);
+                        const retrieved = localStorage.getItem(key);
+                        localStorage.removeItem(key);
+                        
+                        results.push({
+                            size: `${size} bytes`,
+                            success: retrieved === testData
+                        });
+                    } catch (error) {
+                        results.push({
+                            size: `${size} bytes`,
+                            success: false,
+                            error: error.message
+                        });
+                    }
+                }
+                
+                log(`📦 Large Data Test Results:
+${results.map(r => `- ${r.size}: ${r.success ? '✅' : '❌'} ${r.error || ''}`).join('\n')}`, 'info');
+                
+            } catch (error) {
+                log(`❌ Large data test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testStorageQuota() {
+            log('📊 Testing storage quota...', 'info');
+            
+            if (navigator.storage && navigator.storage.estimate) {
+                navigator.storage.estimate().then(estimate => {
+                    const quotaMB = Math.round(estimate.quota / 1024 / 1024);
+                    const usageMB = Math.round(estimate.usage / 1024 / 1024);
+                    const percentUsed = Math.round((estimate.usage / estimate.quota) * 100);
+                    
+                    log(`📊 Storage Quota Information:
+- Total quota: ${quotaMB} MB
+- Currently used: ${usageMB} MB
+- Percentage used: ${percentUsed}%
+- Available: ${quotaMB - usageMB} MB
+
+Note: Very small quotas (< 10MB) often indicate private browsing mode.`, 'info');
+                }).catch(error => {
+                    log(`❌ Storage quota test failed: ${error.message}`, 'error');
+                });
+            } else {
+                log('❌ Storage quota API not available', 'warning');
+            }
+        }
+        
+        async function testLoginFlow() {
+            log('🔐 Testing full login flow...', 'info');
+            
+            try {
+                // Step 1: Test API connectivity
+                log('Step 1: Testing API connectivity...', 'info');
+                const healthResponse = await fetch(`${API_URL}/health`);
+                
+                if (!healthResponse.ok) {
+                    log(`❌ API health check failed: ${healthResponse.status}`, 'error');
+                    return;
+                }
+                
+                // Step 2: Test login
+                log('Step 2: Testing login...', 'info');
+                const loginResponse = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'jatin',
+                        password: 'Jatin@24199'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    log(`❌ Login failed: ${loginResponse.status}`, 'error');
+                    return;
+                }
+                
+                const loginData = await loginResponse.json();
+                
+                // Step 3: Test token storage
+                log('Step 3: Testing token storage...', 'info');
+                const token = loginData.accessToken;
+                
+                try {
+                    localStorage.setItem('accessToken', token);
+                    localStorage.setItem('username', loginData.username);
+                    
+                    const storedToken = localStorage.getItem('accessToken');
+                    const storedUsername = localStorage.getItem('username');
+                    
+                    if (storedToken === token && storedUsername === loginData.username) {
+                        log('✅ Token storage successful', 'success');
+                    } else {
+                        log('❌ Token storage failed', 'error');
+                        return;
+                    }
+                } catch (storageError) {
+                    log(`❌ Token storage error: ${storageError.message}`, 'error');
+                    return;
+                }
+                
+                // Step 4: Test token verification
+                log('Step 4: Testing token verification...', 'info');
+                const verifyResponse = await fetch(`${API_URL}/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (verifyResponse.ok) {
+                    log('✅ Full login flow successful!', 'success');
+                } else {
+                    log(`❌ Token verification failed: ${verifyResponse.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Login flow error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAll() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                log('🧹 All storage cleared', 'success');
+            } catch (error) {
+                log(`❌ Clear failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run basic test on load
+        window.onload = function() {
+            log('📱 iPhone Storage Test loaded. Tap buttons to run tests.', 'info');
+            
+            // Show device info
+            setTimeout(() => {
+                log(`📱 Device Information:
+- User Agent: ${navigator.userAgent}
+- Platform: ${navigator.platform}
+- Language: ${navigator.language}
+- Online: ${navigator.onLine}
+- Cookies: ${navigator.cookieEnabled}
+- Screen: ${screen.width}x${screen.height}
+- Viewport: ${window.innerWidth}x${window.innerHeight}
+- Pixel Ratio: ${window.devicePixelRatio}
+- Touch Support: ${'ontouchstart' in window}`, 'info');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

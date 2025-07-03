@@ -1,6 +1,7 @@
 package com.mjfabrication.config;
 
 import com.mjfabrication.filter.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,6 +20,9 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Value("${spring.profiles.active:prod}")
+    private String activeProfile;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -54,14 +58,32 @@ public class SecurityConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // Allow specific domains for production security
+        
+        // Always allow production domains
         config.addAllowedOrigin("https://mjfabrication.in");
         config.addAllowedOrigin("https://www.mjfabrication.in");
-        // config.addAllowedOrigin("http://localhost:5173"); // For local development
-        // config.addAllowedOrigin("http://localhost:3000"); // For local development
+        
+        // Allow localhost only in development
+        if ("dev".equals(activeProfile)) {
+            config.addAllowedOrigin("http://localhost:5173"); // Vite dev server
+            config.addAllowedOrigin("http://localhost:3000"); // React dev server
+            config.addAllowedOrigin("http://localhost:8080"); // Backend dev server
+        }
+        
+        // Configure headers and methods
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
+        
+        // Add mobile-specific headers
+        config.addExposedHeader("Authorization");
+        config.addExposedHeader("Content-Type");
+        config.addExposedHeader("Accept");
+        config.addExposedHeader("X-Requested-With");
+        config.addExposedHeader("Cache-Control");
+        
+        // Set max age for preflight requests (mobile optimization)
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

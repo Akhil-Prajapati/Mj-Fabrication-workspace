@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Test - MJ Fabrication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔧 MJ Fabrication - Mobile Test</h2>
+        <p>Test authentication on mobile devices</p>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="jatin" placeholder="Enter username">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="Jatin@24199" placeholder="Enter password">
+        </div>
+        
+        <button onclick="testLogin()">🚀 Test Login</button>
+        <button onclick="testAPI()">🔍 Test API Health</button>
+        <button onclick="checkStorage()">📱 Check Storage</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://mj-fabrication-workspace-production.up.railway.app/api/v1';
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+        }
+
+        async function testAPI() {
+            showResult('🔍 Testing API health...', 'info');
+            try {
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    showResult(`✅ API Health OK!\nResponse: ${data}`, 'success');
+                } else {
+                    showResult(`❌ API Health failed!\nStatus: ${response.status}\nText: ${await response.text()}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ API Health error!\n${error.message}\n${error.stack}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            showResult('🔐 Testing login...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`✅ Login successful!\n${JSON.stringify(data, null, 2)}`, 'success');
+                    
+                    // Test localStorage
+                    try {
+                        localStorage.setItem('test-token', data.accessToken);
+                        const stored = localStorage.getItem('test-token');
+                        showResult(`✅ Login successful!\n${JSON.stringify(data, null, 2)}\n\n📱 Storage test: ${stored ? 'WORKING' : 'FAILED'}`, 'success');
+                    } catch (storageError) {
+                        showResult(`✅ Login successful!\n${JSON.stringify(data, null, 2)}\n\n❌ Storage error: ${storageError.message}`, 'success');
+                    }
+                } else {
+                    showResult(`❌ Login failed!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Login error!\n${error.message}\n${error.stack}`, 'error');
+            }
+        }
+
+        function checkStorage() {
+            showResult('📱 Checking mobile storage...', 'info');
+            
+            try {
+                // Test localStorage
+                localStorage.setItem('test-key', 'test-value');
+                const localTest = localStorage.getItem('test-key');
+                localStorage.removeItem('test-key');
+                
+                // Test sessionStorage
+                sessionStorage.setItem('test-key', 'test-value');
+                const sessionTest = sessionStorage.getItem('test-key');
+                sessionStorage.removeItem('test-key');
+                
+                // Browser info
+                const info = {
+                    userAgent: navigator.userAgent,
+                    localStorage: localTest === 'test-value' ? 'WORKING' : 'FAILED',
+                    sessionStorage: sessionTest === 'test-value' ? 'WORKING' : 'FAILED',
+                    cookieEnabled: navigator.cookieEnabled,
+                    onLine: navigator.onLine,
+                    platform: navigator.platform,
+                    language: navigator.language
+                };
+                
+                showResult(`📱 Mobile Storage Test:\n${JSON.stringify(info, null, 2)}`, 'success');
+            } catch (error) {
+                showResult(`❌ Storage test failed!\n${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on load
+        window.onload = function() {
+            showResult('📱 Mobile test page loaded. Tap buttons to test!', 'info');
+        };
+    </script>
+</body>
+</html>

@@ -8,37 +8,37 @@ const ProjectsGallery = () => {
     {
       title: "Commercial Brackets Installation",
       category: "Industrial",
-      image: "Projectimg/brackets.png",
+      image: "/optimized/brackets.png",
       description: "Heavy-duty brackets for warehouse facility",
     },
     {
       title: "Residential Door Frames",
       category: "Residential",
-      image: "Projectimg/doorframes.png",
+      image: "/optimized/doorframes.png",
       description: "Custom door frames for luxury home",
     },
     {
       title: "Modern Staircase Design",
       category: "Residential",
-      image: "Projectimg/staircase.png",
+      image: "/optimized/staircase.png",
       description: "Contemporary staircase with safety railings",
     },
     {
       title: "Office Building Canopy",
       category: "Commercial",
-      image: "Projectimg/conoy.png",
+      image: "/optimized/conoy.png",
       description: "Weather protection for office entrance",
     },
     {
       title: "Window Frame Installation",
       category: "Residential",
-      image: "Projectimg/windowsnew.png",
+      image: "/optimized/windowsnew.png",
       description: "Energy-efficient window frames",
     },
     {
       title: "Custom Fabrication Project",
       category: "Industrial",
-      image: "Projectimg/customshade.png",
+      image: "/optimized/customshade.png",
       description: "Specialized equipment housing",
     },
   ];

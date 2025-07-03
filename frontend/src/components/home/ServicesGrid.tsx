@@ -9,14 +9,14 @@ const ServicesGrid = () => {
       title: "Fabricated Brackets",
       description:
         "Custom steel brackets for industrial and residential use with precision engineering",
-      image: "Serviceimg/Brackets.png",
+      image: "/optimized/Brackets.png",
       features: ["Industrial Grade", "Custom Sizes", "Corrosion Resistant"],
     },
     {
       title: "Door Frames",
       description:
         "Durable door frames in various sizes and materials for all applications",
-      image: "Serviceimg/Doorframe.png",
+      image: "/optimized/Doorframe.png",
       features: [
         "Multiple Materials",
         "Standard & Custom",
@@ -27,28 +27,28 @@ const ServicesGrid = () => {
       title: "Window Frames",
       description:
         "Quality window frames with precise measurements and modern designs",
-      image: "Serviceimg/Window.png",
+      image: "/optimized/Window.png",
       features: ["Energy Efficient", "Modern Design", "Long Lasting"],
     },
     {
       title: "Staircases",
       description:
         "Custom staircases with modern designs combining safety and aesthetics",
-      image: "Serviceimg/Staircases.png",
+      image: "/optimized/Staircases.png",
       features: ["Safety First", "Modern Design", "Custom Solutions"],
     },
     {
       title: "Shades & Canopies",
       description:
         "Weather protection solutions for homes and businesses with style",
-      image: "Serviceimg/Shades&Canopies.png",
+      image: "/optimized/Shades&Canopies.png",
       features: ["Weather Protection", "UV Resistant", "Custom Design"],
     },
     {
       title: "Custom Fabrication",
       description:
         "Bespoke fabrication according to your specific requirements and designs",
-      image: "Serviceimg/Custom.png",
+      image: "/optimized/Custom.png",
       features: ["Fully Custom", "Expert Design", "Quality Materials"],
     },
   ];

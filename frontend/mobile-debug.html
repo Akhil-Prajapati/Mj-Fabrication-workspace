@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Debug - MJ Fabrication</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 10px;
+            background: #f5f5f5;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-color: #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border-color: #ffeaa7;
+        }
+        .status {
+            font-size: 14px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #e9ecef;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .tab.active {
+            background: #007bff;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔧 MJ Fabrication - Mobile Debug</h2>
+        <div class="status" id="status">Loading...</div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('login')">Login</button>
+            <button class="tab" onclick="showTab('debug')">Debug</button>
+            <button class="tab" onclick="showTab('network')">Network</button>
+        </div>
+        
+        <!-- Login Tab -->
+        <div id="login" class="tab-content active">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" value="jatin" placeholder="Enter username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="Jatin@24199" placeholder="Enter password">
+            </div>
+            
+            <button onclick="testLogin()">🚀 Test Login</button>
+            <button onclick="testTokenVerify()">🔍 Test Token</button>
+            <button onclick="clearStorage()">🧹 Clear Storage</button>
+        </div>
+        
+        <!-- Debug Tab -->
+        <div id="debug" class="tab-content">
+            <button onclick="checkEnvironment()">📱 Check Environment</button>
+            <button onclick="testStorage()">💾 Test Storage</button>
+            <button onclick="testCORS()">🌐 Test CORS</button>
+            <button onclick="testPrivateMode()">🔒 Test Private Mode</button>
+        </div>
+        
+        <!-- Network Tab -->
+        <div id="network" class="tab-content">
+            <button onclick="testAPIHealth()">❤️ API Health</button>
+            <button onclick="testPreflight()">✈️ Preflight</button>
+            <button onclick="testHeaders()">📋 Headers</button>
+            <button onclick="testTimeout()">⏱️ Timeout</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://mj-fabrication-workspace-production.up.railway.app/api/v1';
+        let currentToken = null;
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const tabButtons = document.querySelectorAll('.tab');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultDiv.className = `result ${type}`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        // Enhanced fetch with better error handling
+        async function safeFetch(url, options = {}) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timeout (15s)');
+                }
+                throw error;
+            }
+        }
+        
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showResult('❌ Please enter both username and password', 'error');
+                return;
+            }
+            
+            showResult('🔐 Testing login...', 'info');
+            updateStatus('Logging in...');
+            
+            try {
+                const response = await safeFetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const responseText = await response.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error(`Invalid JSON response: ${responseText}`);
+                }
+
+                if (response.ok) {
+                    currentToken = data.accessToken;
+                    
+                    // Test localStorage immediately
+                    try {
+                        localStorage.setItem('accessToken', currentToken);
+                        localStorage.setItem('username', username);
+                        
+                        const storedToken = localStorage.getItem('accessToken');
+                        const storedUsername = localStorage.getItem('username');
+                        
+                        showResult(`✅ Login successful!
+Token: ${currentToken.substring(0, 50)}...
+Username: ${data.username}
+
+📱 Storage Test:
+- Token stored: ${storedToken ? 'YES' : 'NO'}
+- Username stored: ${storedUsername ? 'YES' : 'NO'}
+- Token matches: ${storedToken === currentToken ? 'YES' : 'NO'}
+
+Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                        
+                        updateStatus('✅ Login successful');
+                    } catch (storageError) {
+                        showResult(`⚠️ Login successful but storage failed!
+Token: ${currentToken.substring(0, 50)}...
+Storage Error: ${storageError.message}
+
+Response: ${JSON.stringify(data, null, 2)}`, 'warning');
+                        updateStatus('⚠️ Login OK, storage failed');
+                    }
+                } else {
+                    showResult(`❌ Login failed!
+Status: ${response.status} ${response.statusText}
+Response: ${JSON.stringify(data, null, 2)}`, 'error');
+                    updateStatus('❌ Login failed');
+                }
+            } catch (error) {
+                showResult(`❌ Login error!
+Error: ${error.message}
+Stack: ${error.stack}`, 'error');
+                updateStatus('❌ Login error');
+            }
+        }
+        
+        async function testTokenVerify() {
+            const token = currentToken || localStorage.getItem('accessToken');
+            
+            if (!token) {
+                showResult('❌ No token found. Please login first.', 'error');
+                return;
+            }
+            
+            showResult('🔍 Testing token verification...', 'info');
+            updateStatus('Verifying token...');
+            
+            try {
+                const response = await safeFetch(`${API_URL}/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const responseText = await response.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    data = { message: responseText };
+                }
+
+                if (response.ok) {
+                    showResult(`✅ Token verification successful!
+Token: ${token.substring(0, 50)}...
+Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                    updateStatus('✅ Token valid');
+                } else {
+                    showResult(`❌ Token verification failed!
+Status: ${response.status} ${response.statusText}
+Token: ${token.substring(0, 50)}...
+Response: ${JSON.stringify(data, null, 2)}`, 'error');
+                    updateStatus('❌ Token invalid');
+                }
+            } catch (error) {
+                showResult(`❌ Token verification error!
+Error: ${error.message}
+Token: ${token.substring(0, 50)}...`, 'error');
+                updateStatus('❌ Token error');
+            }
+        }
+        
+        async function testAPIHealth() {
+            showResult('❤️ Testing API health...', 'info');
+            updateStatus('Checking API...');
+            
+            try {
+                const response = await safeFetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                const responseText = await response.text();
+                
+                if (response.ok) {
+                    showResult(`✅ API Health OK!
+Status: ${response.status} ${response.statusText}
+Response: ${responseText}`, 'success');
+                    updateStatus('✅ API healthy');
+                } else {
+                    showResult(`❌ API Health failed!
+Status: ${response.status} ${response.statusText}
+Response: ${responseText}`, 'error');
+                    updateStatus('❌ API unhealthy');
+                }
+            } catch (error) {
+                showResult(`❌ API Health error!
+Error: ${error.message}
+Stack: ${error.stack}`, 'error');
+                updateStatus('❌ API unreachable');
+            }
+        }
+        
+        async function checkEnvironment() {
+            showResult('📱 Checking mobile environment...', 'info');
+            
+            const info = {
+                // Basic browser info
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                onLine: navigator.onLine,
+                cookieEnabled: navigator.cookieEnabled,
+                
+                // Screen info
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                pixelRatio: window.devicePixelRatio,
+                
+                // Viewport info
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                
+                // iOS Detection
+                isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+                isIOSChrome: /CriOS/.test(navigator.userAgent),
+                isIOSSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent),
+                
+                // Feature detection
+                hasLocalStorage: typeof(Storage) !== "undefined",
+                hasSessionStorage: typeof(sessionStorage) !== "undefined",
+                hasIndexedDB: typeof(indexedDB) !== "undefined",
+                hasWebSQL: typeof(openDatabase) !== "undefined",
+                
+                // Touch support
+                hasTouch: 'ontouchstart' in window,
+                
+                // Network info (if available)
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt,
+                    saveData: navigator.connection.saveData
+                } : 'Not available',
+                
+                // Current URL
+                currentURL: window.location.href,
+                
+                // Document state
+                readyState: document.readyState,
+                
+                // Timezone
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                
+                // Current time
+                currentTime: new Date().toISOString()
+            };
+            
+            showResult(`📱 Environment Info:
+${JSON.stringify(info, null, 2)}`, 'info');
+        }
+        
+        async function testStorage() {
+            showResult('💾 Testing storage capabilities...', 'info');
+            
+            const results = {};
+            
+            // Test localStorage
+            try {
+                const testKey = 'test-' + Date.now();
+                const testValue = 'test-value-' + Math.random();
+                
+                localStorage.setItem(testKey, testValue);
+                const retrieved = localStorage.getItem(testKey);
+                localStorage.removeItem(testKey);
+                
+                results.localStorage = {
+                    supported: true,
+                    canWrite: retrieved === testValue,
+                    error: null
+                };
+            } catch (error) {
+                results.localStorage = {
+                    supported: false,
+                    canWrite: false,
+                    error: error.message
+                };
+            }
+            
+            // Test sessionStorage
+            try {
+                const testKey = 'test-' + Date.now();
+                const testValue = 'test-value-' + Math.random();
+                
+                sessionStorage.setItem(testKey, testValue);
+                const retrieved = sessionStorage.getItem(testKey);
+                sessionStorage.removeItem(testKey);
+                
+                results.sessionStorage = {
+                    supported: true,
+                    canWrite: retrieved === testValue,
+                    error: null
+                };
+            } catch (error) {
+                results.sessionStorage = {
+                    supported: false,
+                    canWrite: false,
+                    error: error.message
+                };
+            }
+            
+            // Test large data storage
+            try {
+                const largeData = 'x'.repeat(1024 * 1024); // 1MB of data
+                localStorage.setItem('large-test', largeData);
+                localStorage.removeItem('large-test');
+                results.largeDataStorage = { supported: true, error: null };
+            } catch (error) {
+                results.largeDataStorage = { supported: false, error: error.message };
+            }
+            
+            // Check current storage usage
+            try {
+                let totalSize = 0;
+                for (let key in localStorage) {
+                    if (localStorage.hasOwnProperty(key)) {
+                        totalSize += localStorage[key].length;
+                    }
+                }
+                results.currentUsage = { totalSize, keyCount: localStorage.length };
+            } catch (error) {
+                results.currentUsage = { error: error.message };
+            }
+            
+            showResult(`💾 Storage Test Results:
+${JSON.stringify(results, null, 2)}`, 'info');
+        }
+        
+        async function testPrivateMode() {
+            showResult('🔒 Testing private/incognito mode...', 'info');
+            
+            const results = {};
+            
+            // Test 1: Storage quota
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const estimate = await navigator.storage.estimate();
+                    results.storageQuota = estimate;
+                    results.likelyPrivate = estimate.quota < 120000000; // Less than ~120MB suggests private mode
+                }
+            } catch (error) {
+                results.storageQuota = { error: error.message };
+            }
+            
+            // Test 2: IndexedDB test
+            try {
+                const testDB = indexedDB.open('test-db', 1);
+                testDB.onsuccess = () => {
+                    testDB.result.close();
+                    indexedDB.deleteDatabase('test-db');
+                };
+                results.indexedDB = { accessible: true };
+            } catch (error) {
+                results.indexedDB = { accessible: false, error: error.message };
+            }
+            
+            // Test 3: WebSQL (deprecated but still useful for detection)
+            try {
+                const db = openDatabase('test', '1.0', 'test', 1024);
+                results.webSQL = { accessible: true };
+            } catch (error) {
+                results.webSQL = { accessible: false, error: error.message };
+            }
+            
+            // Test 4: Check for typical private mode indicators
+            results.indicators = {
+                navigatorStorage: !!navigator.storage,
+                requestFileSystem: !!window.requestFileSystem,
+                webkitRequestFileSystem: !!window.webkitRequestFileSystem,
+            };
+            
+            showResult(`🔒 Private Mode Test:
+${JSON.stringify(results, null, 2)}`, 'info');
+        }
+        
+        async function testCORS() {
+            showResult('🌐 Testing CORS configuration...', 'info');
+            
+            const corsTests = [];
+            
+            // Test 1: Simple GET request
+            try {
+                const response = await safeFetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                corsTests.push({
+                    test: 'Simple GET',
+                    success: response.ok,
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+            } catch (error) {
+                corsTests.push({
+                    test: 'Simple GET',
+                    success: false,
+                    error: error.message
+                });
+            }
+            
+            // Test 2: Preflight request (POST with custom headers)
+            try {
+                const response = await safeFetch(`${API_URL}/auth/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test-token',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                corsTests.push({
+                    test: 'Preflight POST',
+                    success: true,
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+            } catch (error) {
+                corsTests.push({
+                    test: 'Preflight POST',
+                    success: false,
+                    error: error.message
+                });
+            }
+            
+            showResult(`🌐 CORS Test Results:
+${JSON.stringify(corsTests, null, 2)}`, 'info');
+        }
+        
+        async function testPreflight() {
+            showResult('✈️ Testing preflight request...', 'info');
+            
+            try {
+                // This should trigger a preflight request
+                const response = await safeFetch(`${API_URL}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                
+                const headers = Object.fromEntries(response.headers.entries());
+                
+                showResult(`✈️ Preflight Response:
+Status: ${response.status} ${response.statusText}
+Headers: ${JSON.stringify(headers, null, 2)}
+
+Key CORS Headers:
+- Access-Control-Allow-Origin: ${headers['access-control-allow-origin'] || 'MISSING'}
+- Access-Control-Allow-Methods: ${headers['access-control-allow-methods'] || 'MISSING'}
+- Access-Control-Allow-Headers: ${headers['access-control-allow-headers'] || 'MISSING'}
+- Access-Control-Allow-Credentials: ${headers['access-control-allow-credentials'] || 'MISSING'}`, 'info');
+            } catch (error) {
+                showResult(`❌ Preflight failed!
+Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testHeaders() {
+            showResult('📋 Testing request headers...', 'info');
+            
+            const testHeaders = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Bearer test-token',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-cache'
+            };
+            
+            try {
+                const response = await safeFetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: testHeaders
+                });
+                
+                const responseHeaders = Object.fromEntries(response.headers.entries());
+                
+                showResult(`📋 Headers Test:
+Request Headers: ${JSON.stringify(testHeaders, null, 2)}
+
+Response Status: ${response.status} ${response.statusText}
+Response Headers: ${JSON.stringify(responseHeaders, null, 2)}`, 'info');
+            } catch (error) {
+                showResult(`❌ Headers test failed!
+Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTimeout() {
+            showResult('⏱️ Testing request timeout...', 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+                
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                showResult(`⏱️ Timeout Test:
+Duration: ${duration}ms
+Status: ${response.status} ${response.statusText}
+Success: Response received within timeout`, 'success');
+            } catch (error) {
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                showResult(`⏱️ Timeout Test:
+Duration: ${duration}ms
+Error: ${error.message}
+Type: ${error.name === 'AbortError' ? 'Timeout' : 'Network Error'}`, 'error');
+            }
+        }
+        
+        function clearStorage() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                currentToken = null;
+                showResult('🧹 Storage cleared successfully', 'success');
+                updateStatus('Storage cleared');
+            } catch (error) {
+                showResult(`❌ Failed to clear storage: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-initialize
+        window.onload = function() {
+            updateStatus('🔧 Mobile debug loaded');
+            showResult('📱 Mobile debug page loaded. Use tabs to navigate tests.', 'info');
+            
+            // Auto-check environment
+            setTimeout(checkEnvironment, 1000);
+        };
+        
+        // Error handling
+        window.onerror = function(message, source, lineno, colno, error) {
+            showResult(`❌ JavaScript Error:
+Message: ${message}
+Source: ${source}:${lineno}:${colno}
+Error: ${error ? error.stack : 'No stack trace'}`, 'error');
+            return true;
+        };
+        
+        // Unhandled promise rejection
+        window.addEventListener('unhandledrejection', function(event) {
+            showResult(`❌ Unhandled Promise Rejection:
+Reason: ${event.reason}
+Promise: ${event.promise}`, 'error');
+        });
+    </script>
+</body>
+</html>
