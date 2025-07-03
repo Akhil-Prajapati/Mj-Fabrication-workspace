@@ -54,7 +54,11 @@ public class SecurityConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*"); // Allow all origins, or specify your frontend domain
+        // Allow specific domains for production security
+        config.addAllowedOrigin("https://mjfabrication.in");
+        config.addAllowedOrigin("https://www.mjfabrication.in");
+        // config.addAllowedOrigin("http://localhost:5173"); // For local development
+        // config.addAllowedOrigin("http://localhost:3000"); // For local development
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
