@@ -60,7 +60,7 @@ public class AuthController {
         cookie.setSecure(true); // set to true for production (HTTPS required)
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60); // 1 week
-        cookie.setAttribute("SameSite", "None"); // None required for cross-origin requests in production
+        cookie.setAttribute("SameSite", "Lax"); // Lax works better for cross-origin in some browsers
         response.addCookie(cookie);
         com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
                 null, // accessToken (do not return token in body for cookie-based auth)
@@ -137,7 +137,7 @@ public class AuthController {
                 cookie.setSecure(true); // set to true in production
                 cookie.setPath("/");
                 cookie.setMaxAge(7 * 24 * 60 * 60); // 1 week
-                cookie.setAttribute("SameSite", "None");
+                cookie.setAttribute("SameSite", "Lax");
                 response.addCookie(cookie);
                 
                 return ResponseEntity.ok(Map.of("message", "Token refreshed successfully"));
@@ -157,7 +157,7 @@ public class AuthController {
         cookie.setSecure(true); // set to true in production
         cookie.setPath("/");
         cookie.setMaxAge(0); // Expire immediately
-        cookie.setAttribute("SameSite", "None");
+        cookie.setAttribute("SameSite", "Lax");
         response.addCookie(cookie);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }

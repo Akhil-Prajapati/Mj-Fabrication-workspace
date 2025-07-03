@@ -24,7 +24,7 @@ export const useTokenManager = () => {
     } catch (error) {
       console.error("Token validation error:", error);
       setIsAuthenticated(false);
-      window.location.href = "/login";
+      window.location.href = "/admin";
     } finally {
       setIsLoading(false);
     }
