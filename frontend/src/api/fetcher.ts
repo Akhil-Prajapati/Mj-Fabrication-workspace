@@ -71,9 +71,9 @@ const refreshToken = async (): Promise<boolean> => {
     const response = await ky.post(joinUrl(BASE_URL, "auth/refresh"), {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    const data = await response.json() as any;
-    if (data.token) {
-      setToken(data.token);
+    const data = (await response.json()) as any;
+    if (data.accessToken) {
+      setToken(data.accessToken);
       return true;
     }
     return response.ok;
@@ -218,9 +218,9 @@ export const manualRefreshToken = async (): Promise<boolean> => {
     const response = await ky.post(joinUrl(BASE_URL, "auth/refresh"), {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    const data = await response.json() as any;
-    if (data.token) {
-      setToken(data.token);
+    const data = (await response.json()) as any;
+    if (data.accessToken) {
+      setToken(data.accessToken);
       return true;
     }
     return response.ok;
@@ -235,7 +235,7 @@ export const verifyToken = async (): Promise<boolean> => {
   try {
     const token = getToken();
     if (!token) return false;
-    
+
     const response = await ky.post(joinUrl(BASE_URL, "auth/verify"), {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -296,12 +296,12 @@ export const login = async (username: string, password: string) => {
         json: { username, password },
       }
     );
-    
+
     // Store the token if login is successful
     if (result && result.accessToken) {
       setToken(result.accessToken);
     }
-    
+
     return result;
   } catch (error) {
     console.error("Login error:", error);

@@ -13,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +25,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -36,37 +40,67 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
+        logger.info("Login attempt for username: {}", authRequest.getUsername());
+        
         try {
-            authenticationManager.authenticate(
+            logger.debug("Attempting authentication for user: {}", authRequest.getUsername());
+            
+            Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
+            
+            logger.info("Authentication successful for user: {}", authRequest.getUsername());
+            logger.debug("Authentication details: {}", authentication.getDetails());
+            
         } catch (Exception ex) {
+            logger.error("Authentication failed for user: {} - Error: {}", authRequest.getUsername(), ex.getMessage());
             // Return a clear error for invalid credentials
             return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
         }
-        UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
-        // Get role from userDetails (convert to UserRole if needed)
-        String roleStr = userDetails.getAuthorities().stream().findFirst().map(Object::toString).orElse(null);
-        com.mjfabrication.enums.UserRole role = null;
-        if (roleStr != null) {
-            try {
-                role = com.mjfabrication.enums.UserRole.valueOf(roleStr);
-            } catch (Exception ignored) {
+        
+        try {
+            logger.debug("Loading user details for: {}", authRequest.getUsername());
+            UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUsername());
+            logger.info("User details loaded successfully for: {}", authRequest.getUsername());
+            logger.debug("User authorities: {}", userDetails.getAuthorities());
+            
+            // Get role from userDetails (convert to UserRole if needed)
+            String roleStr = userDetails.getAuthorities().stream().findFirst().map(Object::toString).orElse(null);
+            logger.debug("Role string extracted: {}", roleStr);
+            
+            com.mjfabrication.enums.UserRole role = null;
+            if (roleStr != null) {
+                try {
+                    role = com.mjfabrication.enums.UserRole.valueOf(roleStr);
+                    logger.debug("Role enum converted: {}", role);
+                } catch (Exception ignored) {
+                    logger.warn("Failed to convert role string to enum: {}", roleStr);
+                }
             }
+            
+            logger.debug("Generating JWT token for user: {}", authRequest.getUsername());
+            String token = jwtUtil.generateToken(userDetails);
+            logger.info("JWT token generated successfully for user: {}", authRequest.getUsername());
+            
+            // For cross-origin compatibility, return token in response body instead of cookie
+            com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
+                    token, // Return token in response body for cross-origin compatibility
+                    null, // refreshToken
+                    "Bearer", // tokenType
+                    null, // userId (set if available)
+                    userDetails.getUsername(), // username
+                    null, // email
+                    null, // firstName
+                    null, // lastName
+                    role // role (UserRole enum)
+            );
+            
+            logger.info("Login successful for user: {} - Returning response", authRequest.getUsername());
+            return ResponseEntity.ok(authResponse);
+            
+        } catch (Exception ex) {
+            logger.error("Error during login process for user: {} - Error: {}", authRequest.getUsername(), ex.getMessage(), ex);
+            return ResponseEntity.status(500).body(Map.of("error", "Internal server error during login"));
         }
-        String token = jwtUtil.generateToken(userDetails);
-        // For cross-origin compatibility, return token in response body instead of cookie
-        com.mjfabrication.payload.response.AuthResponse authResponse = new com.mjfabrication.payload.response.AuthResponse(
-                token, // Return token in response body for cross-origin compatibility
-                null, // refreshToken
-                "Bearer", // tokenType
-                null, // userId (set if available)
-                userDetails.getUsername(), // username
-                null, // email
-                null, // firstName
-                null, // lastName
-                role // role (UserRole enum)
-        );
-        return ResponseEntity.ok(authResponse);
     }
     // In AuthController.java
 
@@ -110,7 +144,15 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(jakarta.servlet.http.HttpServletRequest request, HttpServletResponse response) {
         String token = null;
-        if (request.getCookies() != null) {
+        
+        // First try Authorization header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+        
+        // Fallback to cookie if no Authorization header
+        if (token == null && request.getCookies() != null) {
             for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
                 if ("token".equals(cookie.getName())) {
                     token = cookie.getValue();
@@ -133,16 +175,8 @@ public class AuthController {
                 // Generate new token
                 String newToken = jwtUtil.generateToken(userDetails);
                 
-                // Set new JWT as HttpOnly cookie
-                Cookie cookie = new Cookie("token", newToken);
-                cookie.setHttpOnly(true);
-                cookie.setSecure(true); // set to true in production
-                cookie.setPath("/");
-                cookie.setMaxAge(7 * 24 * 60 * 60); // 1 week
-                cookie.setAttribute("SameSite", "Lax");
-                response.addCookie(cookie);
-                
-                return ResponseEntity.ok(Map.of("message", "Token refreshed successfully"));
+                // Return new token in response body
+                return ResponseEntity.ok(Map.of("accessToken", newToken, "message", "Token refreshed successfully"));
             } else {
                 return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
             }

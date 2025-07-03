@@ -31,12 +31,20 @@ const AdminLogin = () => {
         });
         return;
       }
-      // If no error is returned, login is successful (token is stored in localStorage)
-      toast({
-        title: "Login Successful",
-        description: "Welcome to MJ Fabrication Admin Panel",
-      });
-      navigate("/admin/dashboard");
+      // Check if login was successful by looking for accessToken or username
+      if (result?.accessToken || result?.username) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to MJ Fabrication Admin Panel",
+        });
+        navigate("/admin/dashboard");
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid response from server.",
+          variant: "destructive",
+        });
+      }
     } catch (err: any) {
       if (err?.response?.status === 401) {
         // Clear localStorage on authentication failure
