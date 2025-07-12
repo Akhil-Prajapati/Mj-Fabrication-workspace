@@ -17,4 +17,35 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // SEO and Performance optimizations
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          ui: ["@radix-ui/react-accordion", "@radix-ui/react-dialog"],
+        },
+      },
+    },
+    // Generate source maps for better debugging
+    sourcemap: mode === "development",
+    // Minify for production
+    minify: mode === "production" ? "esbuild" : false,
+    // Target modern browsers for better performance
+    target: "esnext",
+    // Optimize chunks
+    chunkSizeWarningLimit: 1000,
+  },
+  // Add HTML meta tags and SEO optimizations
+  define: {
+    __BUSINESS_NAME__: JSON.stringify("MJ Fabrication"),
+    __BUSINESS_LOCATION__: JSON.stringify("Naroda, Ahmedabad, Gujarat"),
+    __BUSINESS_SERVICES__: JSON.stringify(
+      "MS Fabrication, Doors, Windows, Shades, Railings"
+    ),
+  },
+  // Performance optimizations
+  optimizeDeps: {
+    include: ["react", "react-dom"],
+  },
 }));

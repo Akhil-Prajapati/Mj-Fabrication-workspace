@@ -1,13 +1,30 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_app/
+Disallow: /_next/
+Disallow: /private/
+
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
+Allow: /
+
+# Sitemap location
+Sitemap: https://mjfabrication.in/sitemap.xml
+
+# Host preference
+Host: https://mjfabrication.in
 Allow: /
 
 User-agent: *

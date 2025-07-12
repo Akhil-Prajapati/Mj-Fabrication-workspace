@@ -20,64 +20,65 @@ const HeroCarousel = () => {
     {
       id: 1,
       image: "/optimized/window.png",
-      title: "MS Windows Fabrication",
-      subtitle: "Premium Quality Metal Window Frames",
+      title: "MS Windows Fabrication Naroda Ahmedabad",
+      subtitle: "Premium Quality Metal Window Frames in Gujarat",
       description:
-        "Custom MS windows with precision engineering and modern design",
-      cta: "Get Quote",
+        "Custom MS windows with precision engineering for homes and offices in Naroda, Nikol, and Ahmedabad. 15+ years experience in Gujarat.",
+      cta: "Get Free Quote",
     },
     {
       id: 2,
       image: "/optimized/door.png",
-      title: "MS Doors Manufacturing",
-      subtitle: "Heavy Duty Metal Doors",
+      title: "MS Doors Manufacturing Ahmedabad",
+      subtitle: "Heavy Duty Metal Doors for Gujarat",
       description:
-        "Robust MS doors for residential and commercial applications",
-      cta: "View Products",
+        "Robust MS doors for residential and commercial properties across Ahmedabad. Expert installation in Naroda, Nikol area.",
+      cta: "View Door Designs",
     },
     {
       id: 3,
       image: "/optimized/shade.png",
-      title: "MS Shade Solutions",
-      subtitle: "Industrial Shade Structures",
+      title: "MS Shade Solutions Gujarat",
+      subtitle: "Industrial Shade Structures Ahmedabad",
       description:
-        "Durable metal shade solutions for parking and outdoor areas",
-      cta: "Learn More",
+        "Durable MS shade solutions for parking, factories, and outdoor areas across Gujarat. Professional installation in Naroda region.",
+      cta: "Explore Shade Options",
     },
     {
       id: 4,
       image: "/optimized/railings.png",
-      title: "MS Railings & Handrails",
-      subtitle: "Safety with Style",
-      description: "Custom MS railings for staircases, balconies, and walkways",
-      cta: "Explore Designs",
+      title: "MS Railings & Handrails Ahmedabad",
+      subtitle: "Safety with Style in Gujarat",
+      description:
+        "Custom MS railings for staircases, balconies, and walkways in Ahmedabad. Safety compliant designs for Naroda, Nikol projects.",
+      cta: "View Railing Designs",
     },
     {
       id: 5,
       image: "/optimized/gate.png",
-      title: "MS Gates & Grills",
-      subtitle: "Security & Aesthetics Combined",
+      title: "MS Gates & Grills Naroda",
+      subtitle: "Security & Aesthetics for Ahmedabad",
       description:
-        "Heavy-duty MS gates and decorative grills for complete security",
-      cta: "Get Estimate",
+        "Heavy-duty MS gates and decorative grills for complete security in Gujarat. Custom designs for residential and commercial properties.",
+      cta: "Get Security Solutions",
     },
     {
       id: 6,
       image: "/optimized/window2.png",
-      title: "MS Windows Fabrication",
-      subtitle: "Premium Quality Metal Window Frames",
+      title: "Custom MS Windows Gujarat",
+      subtitle: "Energy Efficient Window Solutions",
       description:
-        "Custom MS windows with precision engineering and modern design 2",
-      cta: "Get Quote",
+        "Modern MS windows with energy-efficient designs for Gujarat climate. Perfect for residential complexes in Ahmedabad region.",
+      cta: "Contact Us Today",
     },
     {
       id: 7,
       image: "/optimized/gate2.png",
-      title: "MS Gates & Grills",
-      subtitle: "Security & Aesthetics Combined",
+      title: "Industrial MS Gates Ahmedabad",
+      subtitle: "Heavy Duty Industrial Solutions",
       description:
-        "Heavy-duty MS gates and decorative grills for complete security 2",
-      cta: "Get Estimate",
+        "Industrial grade MS gates for factories and warehouses across Gujarat. Specialized solutions for industrial clients in Ahmedabad.",
+      cta: "Industrial Quotes",
     },
     {
       id: 8,
@@ -118,13 +119,14 @@ const HeroCarousel = () => {
         <CarouselContent>
           {slides.map((slide) => (
             <CarouselItem key={slide.id}>
-              <div className="relative h-[80vh] min-h-[600px]">
-                <div
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                  style={{ backgroundImage: `url(${slide.image})` }}
-                >
-                  <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-                </div>
+              <div className="relative h-[80vh] min-h-[600px] overflow-hidden">
+                <img
+                  src={slide.image}
+                  alt={`${slide.title} - MJ Fabrication Naroda Ahmedabad Gujarat`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-50"></div>
                 <div className="relative z-10 flex items-center justify-center h-full">
                   <div className="text-center text-white max-w-4xl mx-auto px-6">
                     <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-fade-in">

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  
+  <!-- Home Page -->
+  <url>
+    <loc>https://mjfabrication.in/</loc>
+    <lastmod>2024-01-15T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://mjfabrication.in/img/door.png</image:loc>
+      <image:title>MS Door Fabrication Naroda Ahmedabad</image:title>
+      <image:caption>Custom MS door manufacturing in Naroda, Ahmedabad by MJ Fabrication</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/img/window.png</image:loc>
+      <image:title>MS Window Fabrication Nikol Ahmedabad</image:title>
+      <image:caption>Professional MS window frame fabrication in Nikol, Ahmedabad</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/img/shade.png</image:loc>
+      <image:title>Shade Structure Installation Gujarat</image:title>
+      <image:caption>Industrial shade structure installation in Gujarat by MJ Fabrication</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/img/railings.png</image:loc>
+      <image:title>MS Railing Work Naroda</image:title>
+      <image:caption>Custom MS railing and handrail fabrication in Naroda area</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- About Page -->
+  <url>
+    <loc>https://mjfabrication.in/about</loc>
+    <lastmod>2024-01-10T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Services Page -->
+  <url>
+    <loc>https://mjfabrication.in/services</loc>
+    <lastmod>2024-01-10T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Serviceimg/Doorframe.png</image:loc>
+      <image:title>Door Frame Fabrication Services Ahmedabad</image:title>
+      <image:caption>Professional door frame manufacturing services in Ahmedabad, Gujarat</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Serviceimg/Window.png</image:loc>
+      <image:title>Window Fabrication Services Naroda</image:title>
+      <image:caption>Expert window fabrication services in Naroda, Nikol area</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Serviceimg/Shades&Canopies.png</image:loc>
+      <image:title>Shade and Canopy Installation Gujarat</image:title>
+      <image:caption>Professional shade and canopy installation services in Gujarat</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Serviceimg/Staircases.png</image:loc>
+      <image:title>Staircase Fabrication Ahmedabad</image:title>
+      <image:caption>Custom staircase fabrication and installation in Ahmedabad</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Gallery Page -->
+  <url>
+    <loc>https://mjfabrication.in/gallery</loc>
+    <lastmod>2024-01-05T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Projectimg/brackets.png</image:loc>
+      <image:title>MS Bracket Fabrication Work</image:title>
+      <image:caption>Custom MS bracket fabrication project in Naroda, Ahmedabad</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Projectimg/conoy.png</image:loc>
+      <image:title>Canopy Installation Project</image:title>
+      <image:caption>Professional canopy installation project in Gujarat</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Projectimg/customshade.png</image:loc>
+      <image:title>Custom Shade Structure</image:title>
+      <image:caption>Custom shade structure fabrication and installation</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://mjfabrication.in/Projectimg/staircase.png</image:loc>
+      <image:title>Staircase Fabrication Project</image:title>
+      <image:caption>Custom staircase fabrication project in Ahmedabad</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Contact Page -->
+  <url>
+    <loc>https://mjfabrication.in/contact</loc>
+    <lastmod>2024-01-10T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+</urlset>

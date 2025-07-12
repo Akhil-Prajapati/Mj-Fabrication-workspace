@@ -4,78 +4,107 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const Services = () => {
+  // SEO data for Services page
+  const servicesJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "MS Fabrication Services",
+    provider: {
+      "@type": "LocalBusiness",
+      name: "MJ Fabrication",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Nava Naroda",
+        addressLocality: "Naroda",
+        addressRegion: "Gujarat",
+        postalCode: "382330",
+        addressCountry: "IN",
+      },
+    },
+    serviceType: "MS Fabrication Work",
+    description:
+      "Professional MS fabrication services including doors, windows, shades, railings, and custom metal work in Naroda, Ahmedabad, Gujarat.",
+    areaServed: ["Ahmedabad", "Gujarat", "Naroda", "Nikol"],
+    offers: {
+      "@type": "Offer",
+      availability: "InStock",
+      priceRange: "₹₹",
+    },
+  };
+
   const services = [
     {
-      title: "Fabrication Shades",
+      title: "MS Shade Fabrication & Installation - Naroda Ahmedabad",
       description:
-        "Custom-designed shades for residential and commercial spaces. We create durable, weather-resistant shades that provide optimal protection while enhancing aesthetic appeal.",
+        "Premium MS shade structures and canopies for residential, commercial, and industrial use in Naroda, Nikol, and Ahmedabad. Weather-resistant shades with custom design options for parking areas, factories, and outdoor spaces across Gujarat.",
       features: [
-        "Custom sizing",
-        "Weather-resistant materials",
-        "Multiple color options",
-        "Easy installation",
+        "Custom sizing for any space",
+        "Galvanized MS for durability",
+        "Weather & UV resistant coating",
+        "Professional installation in Gujarat",
       ],
       image: "Serviceimg/Shades&Canopies.png",
     },
     {
-      title: "Door Frames",
+      title: "MS Door Frame Manufacturing - Ahmedabad Gujarat",
       description:
-        "Precision-crafted door frames for all types of doors. Our frames are designed for durability, perfect fit, and long-lasting performance.",
+        "Precision-crafted MS door frames for residential and commercial properties in Ahmedabad. Heavy-duty door frames with security features, perfect fit guarantee, and long-lasting performance for properties in Naroda, Nikol area.",
       features: [
-        "Standard & custom sizes",
-        "Multiple material options",
-        "Security features",
-        "Professional installation",
+        "Standard & custom sizes available",
+        "Heavy gauge MS material",
+        "Anti-theft security features",
+        "Expert installation in Ahmedabad",
       ],
       image: "Serviceimg/Doorframe.png",
     },
     {
-      title: "Window Frames",
+      title: "MS Window Frame Fabrication - Naroda Nikol",
       description:
-        "High-quality window frames that combine functionality with style. Perfect for both residential and commercial applications.",
+        "High-quality MS window frames that combine functionality with modern design. Perfect for residential complexes, commercial buildings, and industrial facilities in Naroda, Nikol, and across Ahmedabad, Gujarat.",
       features: [
-        "Energy efficient",
-        "Corrosion resistant",
-        "Multiple designs",
-        "Custom dimensions",
+        "Energy efficient designs",
+        "Corrosion resistant coating",
+        "Modern & traditional styles",
+        "Custom dimensions for any project",
       ],
       image: "Serviceimg/Window.png",
     },
     {
-      title: "Staircase Fabrication",
+      title: "MS Staircase Fabrication - Ahmedabad Gujarat",
       description:
-        "Custom staircases that blend safety, functionality, and aesthetic appeal. From simple designs to complex architectural features.",
+        "Custom MS staircases combining safety, functionality, and architectural beauty. From simple residential stairs to complex industrial staircases for buildings across Ahmedabad, including Naroda, Nikol, Vastral areas.",
       features: [
-        "Safety compliance",
-        "Custom designs",
-        "Handrail options",
-        "Non-slip surfaces",
+        "IS code safety compliance",
+        "Architectural custom designs",
+        "MS handrail options",
+        "Anti-slip surface treatments",
       ],
       image: "Serviceimg/Staircases.png",
     },
     {
-      title: "Custom Fabrication",
+      title: "Custom MS Fabrication Work - Gujarat",
       description:
-        "Specialized fabrication services for unique requirements. We work with you to create custom solutions that meet your specific needs.",
+        "Specialized custom MS fabrication services for unique industrial and residential requirements across Gujarat. We design and manufacture custom MS solutions for factories, warehouses, and residential projects in Ahmedabad region.",
       features: [
-        "Consultation & design",
-        "CAD drawings",
+        "Free consultation & design",
+        "AutoCAD technical drawings",
         "Prototype development",
-        "Production & installation",
+        "Complete production & installation",
       ],
       image: "Serviceimg/Custom.png",
     },
     {
-      title: "Repair & Maintenance",
+      title: "MS Fabrication Repair & Maintenance - Ahmedabad",
       description:
-        "Professional repair and maintenance services for all types of fabricated items. Keep your installations in perfect condition.",
+        "Professional repair and maintenance services for all types of MS fabricated structures in Ahmedabad. Expert welding, painting, and restoration services for doors, windows, shades, and custom installations across Gujarat.",
       features: [
-        "Quick response",
-        "Quality repairs",
-        "Maintenance contracts",
-        "Emergency services",
+        "24/7 emergency response",
+        "On-site welding repairs",
+        "Annual maintenance contracts",
+        "Industrial breakdown services",
       ],
       image: "Serviceimg/Custom2.png",
     },
@@ -83,15 +112,30 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="MS Fabrication Services Naroda Ahmedabad | Door Window Shade Manufacturing Gujarat - MJ Fabrication"
+        description="Professional MS fabrication services in Naroda, Ahmedabad. Expert door, window, shade, railing & staircase fabrication. 15+ years experience in Gujarat. GST registered company. Call for free quote."
+        keywords="MS fabrication services Ahmedabad, door frame manufacturing Naroda, window fabrication Nikol, shade structure Gujarat, staircase fabrication Ahmedabad, railing work Naroda, custom MS fabrication Gujarat, metal fabrication services Ahmedabad"
+        canonicalUrl="https://mjfabrication.in/services"
+        jsonLd={servicesJsonLd}
+      />
       <Header />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
-          <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-            Comprehensive fabrication solutions for all your construction and
-            design needs
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            MS Fabrication Services in Naroda, Ahmedabad | Gujarat's Best
+            Fabrication Work
+          </h1>
+          <p className="text-xl text-blue-100 max-w-4xl mx-auto mb-4">
+            Professional MS fabrication services in Naroda, Nikol, and across
+            Ahmedabad. Expert door, window, shade, and staircase fabrication
+            with 15+ years experience.
+          </p>
+          <p className="text-lg text-blue-100 max-w-3xl mx-auto">
+            GST Registered | ISO Certified | Serving Gujarat with Quality MS
+            Fabrication Solutions
           </p>
         </div>
       </section>
