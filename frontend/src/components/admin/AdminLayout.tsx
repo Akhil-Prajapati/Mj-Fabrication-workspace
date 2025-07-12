@@ -13,9 +13,7 @@ const AdminLayout = () => {
     try {
       await fetcher({
         path: "/api/v1/auth/logout",
-        method: "POST",
         shouldShowLoader: false,
-        credentials: "include",
       });
     } catch (e) {
       // ignore error
