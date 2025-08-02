@@ -9,7 +9,7 @@ const ServicesGrid = () => {
       title: "Fabricated Brackets",
       description:
         "Custom steel brackets for industrial and residential use with precision engineering",
-      image: "/optimized/Brackets.png",
+      image: "/optimized/brackets.png",
       features: ["Industrial Grade", "Custom Sizes", "Corrosion Resistant"],
     },
     {
@@ -27,7 +27,7 @@ const ServicesGrid = () => {
       title: "Window Frames",
       description:
         "Quality window frames with precise measurements and modern designs",
-      image: "/optimized/Window.png",
+      image: "/optimized/window.png",
       features: ["Energy Efficient", "Modern Design", "Long Lasting"],
     },
     {
