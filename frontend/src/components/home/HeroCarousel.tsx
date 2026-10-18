@@ -20,73 +20,73 @@ const HeroCarousel = () => {
     {
       id: 1,
       image: "/optimized/window.png",
-      title: "MS Windows Fabrication Naroda Ahmedabad",
-      subtitle: "Premium Quality Metal Window Frames in Gujarat",
+      title: "Industrial Fabrication Manufacturer & Exporter",
+      subtitle: "Supplying European and Gulf Markets from India",
       description:
-        "Custom MS windows with precision engineering for homes and offices in Naroda, Nikol, and Ahmedabad. 15+ years experience in Gujarat.",
-      cta: "Get Free Quote",
+        "Fabricated metal structures, welded assemblies and sheet metal components, manufactured to your drawings and specifications.",
+      cta: "Request a Quotation",
     },
     {
       id: 2,
       image: "/optimized/door.png",
-      title: "MS Doors Manufacturing Ahmedabad",
-      subtitle: "Heavy Duty Metal Doors for Gujarat",
+      title: "Metal Door Frames & Heavy-Duty Doors",
+      subtitle: "Built to Drawing, Supplied to Specification",
       description:
-        "Robust MS doors for residential and commercial properties across Ahmedabad. Expert installation in Naroda, Nikol area.",
-      cta: "View Door Designs",
+        "Heavy-gauge door frames and metal doors for commercial and industrial buildings, produced in the sizes and tolerances your project requires.",
+      cta: "View Capabilities",
     },
     {
       id: 3,
       image: "/optimized/shade.png",
-      title: "MS Shade Solutions Gujarat",
-      subtitle: "Industrial Shade Structures Ahmedabad",
+      title: "Industrial Shade & Canopy Structures",
+      subtitle: "Fabricated Steel Structures for Industrial Sites",
       description:
-        "Durable MS shade solutions for parking, factories, and outdoor areas across Gujarat. Professional installation in Naroda region.",
-      cta: "Explore Shade Options",
+        "Weather-resistant shade structures and canopies for factories, parking areas and outdoor installations.",
+      cta: "Discuss Your Project",
     },
     {
       id: 4,
       image: "/optimized/railings.png",
-      title: "MS Railings & Handrails Ahmedabad",
-      subtitle: "Safety with Style in Gujarat",
+      title: "Railings, Handrails & Safety Barriers",
+      subtitle: "Fabricated to Project Safety Requirements",
       description:
-        "Custom MS railings for staircases, balconies, and walkways in Ahmedabad. Safety compliant designs for Naroda, Nikol projects.",
-      cta: "View Railing Designs",
+        "Railings and handrail systems for staircases, walkways and platforms, fabricated to the standards specified for your site.",
+      cta: "Send Your Drawings",
     },
     {
       id: 5,
       image: "/optimized/gate.png",
-      title: "MS Gates & Grills Naroda",
-      subtitle: "Security & Aesthetics for Ahmedabad",
+      title: "Industrial Gates, Grills & Barriers",
+      subtitle: "Access and Perimeter Fabrication",
       description:
-        "Heavy-duty MS gates and decorative grills for complete security in Gujarat. Custom designs for residential and commercial properties.",
-      cta: "Get Security Solutions",
+        "Heavy-duty gates, grills and perimeter components for industrial and commercial premises, made to order.",
+      cta: "Get Technical Details",
     },
     {
       id: 6,
       image: "/optimized/window2.png",
-      title: "Custom MS Windows Gujarat",
-      subtitle: "Energy Efficient Window Solutions",
+      title: "Sheet Metal Enclosures & Frames",
+      subtitle: "Custom Sheet Metal Manufacturing",
       description:
-        "Modern MS windows with energy-efficient designs for Gujarat climate. Perfect for residential complexes in Ahmedabad region.",
-      cta: "Contact Us Today",
+        "Enclosures, frames, brackets and formed sheet metal parts, manufactured from your technical drawings.",
+      cta: "Contact Our Team",
     },
     {
       id: 7,
       image: "/optimized/gate2.png",
-      title: "Industrial MS Gates Ahmedabad",
-      subtitle: "Heavy Duty Industrial Solutions",
+      title: "Fabrication for Factories & Warehouses",
+      subtitle: "Industrial-Grade Welded Assemblies",
       description:
-        "Industrial grade MS gates for factories and warehouses across Gujarat. Specialized solutions for industrial clients in Ahmedabad.",
-      cta: "Industrial Quotes",
+        "Structural and access fabrication for factories, warehouses and plant facilities, supplied for domestic and export projects.",
+      cta: "Request Industrial Quote",
     },
     {
       id: 8,
       image: "/optimized/petrolpump.png",
-      title: "MS Petrol Pump Structures",
-      subtitle: "Durable and Safe Petrol Pump Structures",
+      title: "Petrol Pump & Forecourt Structures",
+      subtitle: "Durable Fabricated Canopy Systems",
       description:
-        "Custom MS solutions for petrol pumps ensuring durability and safety",
+        "Fabricated canopy and forecourt structures engineered for durability and site safety.",
       cta: "Learn More",
     },
   ];
@@ -122,7 +122,7 @@ const HeroCarousel = () => {
               <div className="relative h-[80vh] min-h-[600px] overflow-hidden">
                 <img
                   src={slide.image}
-                  alt={`${slide.title} - MJ Fabrication Naroda Ahmedabad Gujarat`}
+                  alt={`${slide.title} - MJ Fabrication, industrial fabrication manufacturer and exporter`}
                   className="absolute inset-0 w-full h-full object-cover"
                   loading="lazy"
                 />

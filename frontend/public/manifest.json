@@ -1,7 +1,7 @@
 {
-  "name": "MJ Fabrication - MS Fabrication Work Naroda Ahmedabad Gujarat",
+  "name": "MJ Fabrication - Industrial & Sheet Metal Fabrication Manufacturer & Exporter",
   "short_name": "MJ Fabrication",
-  "description": "Professional MS fabrication company in Naroda, Ahmedabad specializing in doors, windows, shades, railings and custom metal work across Gujarat.",
+  "description": "Industrial and sheet metal fabrication manufacturer and exporter, producing doors, windows, shades, railings and custom metal work to customer drawings.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -49,7 +49,7 @@
     {
       "name": "Contact MJ Fabrication",
       "short_name": "Contact",
-      "description": "Contact MJ Fabrication for MS fabrication work in Naroda Ahmedabad",
+      "description": "Contact MJ Fabrication for industrial and sheet metal fabrication",
       "url": "/contact",
       "icons": [
         {
@@ -61,7 +61,7 @@
     {
       "name": "Our Services",
       "short_name": "Services",
-      "description": "MS Fabrication Services in Ahmedabad Gujarat",
+      "description": "Industrial and sheet metal fabrication services",
       "url": "/services",
       "icons": [
         {

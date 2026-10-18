@@ -2,9 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const AboutSummary = () => {
   const stats = [
-    { number: "1000+", label: "Projects Completed in Ahmedabad" },
-    { number: "15+", label: "Years Serving Gujarat" },
-    { number: "500+", label: "Happy Customers in Naroda-Nikol" },
+    { number: "1000+", label: "Projects Completed" },
+    { number: "15+", label: "Years in Fabrication" },
+    { number: "500+", label: "Customers Served" },
     { number: "100%", label: "GST Registered" },
   ];
 
@@ -13,23 +13,22 @@ const AboutSummary = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            About MJ Fabrication - Leading MS Fabrication Company in Naroda,
-            Ahmedabad
+            About MJ Fabrication - Industrial Fabrication Manufacturer &amp;
+            Exporter
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-4">
-            Established in Nava Naroda, Ahmedabad, MJ Fabrication has been
-            Gujarat's trusted name for premium quality MS fabrication services
-            for over 15 years. We specialize in custom fabricated brackets, door
-            frames, window frames, staircases, and industrial shade structures
-            with expert craftsmanship and cutting-edge technology.
+            MJ Fabrication has delivered custom metal fabrication for over 15
+            years, producing fabricated brackets, door and window frames,
+            staircases, welded assemblies and industrial shade structures. We
+            manufacture to customer drawings and technical specifications
+            rather than to a fixed catalogue.
           </p>
           <p className="text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Serving Naroda, Nikol, Vastral, Odhav, and entire Ahmedabad with
-            GST-registered fabrication solutions built from Jindal Steel
-            material. From residential projects to large industrial
-            installations, we deliver excellence in every MS fabrication work
-            across Gujarat — and export fabricated components to clients in
-            Poland, Europe, and the Gulf.
+            We are a GST-registered manufacturer working in Jindal Steel
+            material, supplying fabricated components for projects across
+            European and Gulf markets. From single prototype parts to
+            repeat production runs, every order is made against the
+            specification supplied.
           </p>
         </div>
 

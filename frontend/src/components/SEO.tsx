@@ -12,9 +12,9 @@ interface SEOProps {
 }
 
 const SEO = ({
-  title = "MJ Fabrication Ahmedabad | Industrial & Sheet Metal Fabrication Exporter to Poland, Europe & Gulf | Naroda Gujarat India",
-  description = "MJ Fabrication - industrial and sheet metal fabrication manufacturer and exporter in Naroda, Ahmedabad, Gujarat, India. Custom metal manufacturing from your drawings using Jindal Steel material. Supplying clients in Poland, Europe and the Gulf. 15+ years experience. GST registered.",
-  keywords = "MJ Fabrication, industrial fabrication India, sheet metal fabrication exporter, metal fabrication Poland, fabrication supplier Europe, metal fabrication Gulf Middle East, custom metal manufacturing India, Indian fabrication exporter, contract manufacturing India, welded assemblies supplier, Jindal Steel fabrication, MS fabrication Ahmedabad, fabrication work Naroda, metal fabrication Nikol, custom fabrication Ahmedabad",
+  title = "MJ Fabrication | Industrial & Sheet Metal Fabrication Manufacturer & Exporter to Europe and the Gulf",
+  description = "MJ Fabrication - industrial and sheet metal fabrication manufacturer and exporter. Custom metal manufacturing from your drawings and technical specifications, using Jindal Steel material. Supplying fabricated components to European and Gulf markets. 15+ years experience. GST registered.",
+  keywords = "MJ Fabrication, industrial fabrication manufacturer, sheet metal fabrication exporter, metal fabrication exporter Europe, fabrication supplier Europe, metal fabrication Gulf Middle East, custom metal manufacturing, contract manufacturing fabrication, welded assemblies manufacturer, fabricated metal components exporter, Jindal Steel fabrication, build to drawing fabrication, metal enclosures and brackets manufacturer",
   ogTitle,
   ogDescription,
   ogImage = "https://mjfabrication.in/img/mj-fabrication-og-image.jpg",

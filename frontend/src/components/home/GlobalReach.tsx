@@ -1,12 +1,11 @@
 import { CalendarCheck, FileCheck2, Globe, ShieldCheck } from "lucide-react";
 
-// Only markets the business has confirmed. Poland is named; Europe and the
-// Gulf stay regional rather than listing countries we cannot substantiate.
+// Markets are given as regions only. No individual country is named, so
+// nothing here has to be substantiated client by client.
 const markets = [
-  { name: "Poland", note: "Export projects" },
-  { name: "Europe", note: "Project work" },
+  { name: "Europe", note: "Primary export market" },
   { name: "Gulf & Middle East", note: "Project work" },
-  { name: "India", note: "Ahmedabad, Gujarat" },
+  { name: "India", note: "Manufacturing base" },
 ];
 
 const strengths = [
@@ -40,14 +39,14 @@ const GlobalReach = () => {
             International Supply
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Fabrication for Clients in India and Overseas
+            Supplying Fabricated Components to European &amp; Gulf Markets
           </h2>
           <p className="text-lg text-blue-100 max-w-4xl mx-auto leading-relaxed">
-            From our workshop in Naroda, Ahmedabad, MJ Fabrication supplies
-            fabricated metal components to customers in India and abroad,
-            including project work in Poland, elsewhere in Europe, and the
-            Gulf. We work from your drawings and specifications, so distance
-            does not change how the part is made.
+            MJ Fabrication manufactures in India and exports fabricated metal
+            components to international customers across Europe and the Gulf.
+            We work from your drawings and technical specifications, so
+            distance does not change how the part is made or the tolerance it
+            is held to.
           </p>
         </div>
 

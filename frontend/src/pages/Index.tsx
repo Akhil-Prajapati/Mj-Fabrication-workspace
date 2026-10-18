@@ -15,9 +15,9 @@ const Index = () => {
   const homeJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "MJ Fabrication - Industrial & Sheet Metal Fabrication Exporter, Naroda Ahmedabad Gujarat",
+    name: "MJ Fabrication - Industrial & Sheet Metal Fabrication Manufacturer & Exporter",
     description:
-      "Industrial and sheet metal fabrication manufacturer and exporter in Naroda, Ahmedabad, Gujarat, India. Custom metal manufacturing from customer drawings using Jindal Steel material, supplying clients in India, Poland, Europe and the Gulf. 15+ years experience. GST registered.",
+      "Industrial and sheet metal fabrication manufacturer and exporter. Custom metal manufacturing from customer drawings using Jindal Steel material, supplying clients across European and Gulf markets. 15+ years experience. GST registered.",
     url: "https://mjfabrication.in/",
     mainEntity: {
       "@type": "LocalBusiness",
@@ -38,10 +38,9 @@ const Index = () => {
       // Only markets the business has confirmed. Europe and the Gulf are
       // declared as regions rather than as countries we cannot substantiate.
       areaServed: [
-        { "@type": "Country", name: "India" },
-        { "@type": "Country", name: "Poland" },
         { "@type": "Place", name: "Europe" },
         { "@type": "Place", name: "Gulf and Middle East" },
+        { "@type": "Country", name: "India" },
       ],
       knowsLanguage: ["en", "hi", "gu"],
     },
