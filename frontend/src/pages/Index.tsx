@@ -1,5 +1,6 @@
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ServicesGrid from "@/components/home/ServicesGrid";
+import IndustrialCapabilities from "@/components/home/IndustrialCapabilities";
 import AboutSummary from "@/components/home/AboutSummary";
 import ProjectsGallery from "@/components/home/ProjectsGallery";
 import ProcessSection from "@/components/home/ProcessSection";
@@ -42,6 +43,7 @@ const Index = () => {
       <Header />
       <HeroCarousel />
       <ServicesGrid />
+      <IndustrialCapabilities />
       <AboutSummary />
       <ProjectsGallery />
       <ProcessSection />

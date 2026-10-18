@@ -45,3 +45,6 @@ yarn-error.log*
 /frontend/dist/
 /frontend/.next/
 /frontend/.vercel/
+
+# Playwright MCP screenshots/snapshots
+.playwright-mcp/

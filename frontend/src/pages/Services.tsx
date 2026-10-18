@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import IndustrialCapabilities from "@/components/home/IndustrialCapabilities";
 
 const Services = () => {
   // SEO data for Services page
@@ -46,7 +47,7 @@ const Services = () => {
         "Weather & UV resistant coating",
         "Professional installation in Gujarat",
       ],
-      image: "Serviceimg/Shades&Canopies.png",
+      image: "/optimized/Shades&Canopies.png",
     },
     {
       title: "MS Door Frame Manufacturing - Ahmedabad Gujarat",
@@ -58,7 +59,7 @@ const Services = () => {
         "Anti-theft security features",
         "Expert installation in Ahmedabad",
       ],
-      image: "Serviceimg/Doorframe.png",
+      image: "/optimized/Doorframe.png",
     },
     {
       title: "MS Window Frame Fabrication - Naroda Nikol",
@@ -70,7 +71,7 @@ const Services = () => {
         "Modern & traditional styles",
         "Custom dimensions for any project",
       ],
-      image: "Serviceimg/Window.png",
+      image: "/optimized/window.png",
     },
     {
       title: "MS Staircase Fabrication - Ahmedabad Gujarat",
@@ -82,7 +83,7 @@ const Services = () => {
         "MS handrail options",
         "Anti-slip surface treatments",
       ],
-      image: "Serviceimg/Staircases.png",
+      image: "/optimized/Staircases.png",
     },
     {
       title: "Custom MS Fabrication Work - Gujarat",
@@ -94,7 +95,7 @@ const Services = () => {
         "Prototype development",
         "Complete production & installation",
       ],
-      image: "Serviceimg/Custom.png",
+      image: "/optimized/Custom.png",
     },
     {
       title: "MS Fabrication Repair & Maintenance - Ahmedabad",
@@ -106,7 +107,7 @@ const Services = () => {
         "Annual maintenance contracts",
         "Industrial breakdown services",
       ],
-      image: "Serviceimg/Custom2.png",
+      image: "/optimized/Custom2.png",
     },
   ];
 
@@ -140,6 +141,8 @@ const Services = () => {
         </div>
       </section>
 
+      <IndustrialCapabilities />
+
       {/* Services Grid */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -153,6 +156,8 @@ const Services = () => {
                   <img
                     src={service.image}
                     alt={service.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-48 object-cover"
                   />
                 </div>
