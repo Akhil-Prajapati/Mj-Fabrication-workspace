@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, MessageSquare, Package, FileText, BarChart3 } from "lucide-react";
 import { fetcher } from "@/api/fetcher";
 
 const AdminLayout = () => {
@@ -22,13 +22,12 @@ const AdminLayout = () => {
   };
 
   const menuItems = [
-    { name: "Dashboard", path: "/admin/dashboard", icon: "🏠" },
-    { name: "Customer Management", path: "/admin/customers", icon: "👥" },
-    { name: "Inquiry Management", path: "/admin/inquiries", icon: "📝" },
-    { name: "Inventory Management", path: "/admin/inventory", icon: "📦" },
-    { name: "Invoice Generation", path: "/admin/invoices", icon: "📄" },
-    // { name: "Company Profile", path: "/admin/company", icon: "🏢" },
-    { name: "Reports", path: "/admin/reports", icon: "📊" },
+    { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Customer Management", path: "/admin/customers", icon: Users },
+    { name: "Inquiry Management", path: "/admin/inquiries", icon: MessageSquare },
+    { name: "Inventory Management", path: "/admin/inventory", icon: Package },
+    { name: "Invoice Generation", path: "/admin/invoices", icon: FileText },
+    { name: "Reports", path: "/admin/reports", icon: BarChart3 },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -64,21 +63,24 @@ const AdminLayout = () => {
         </div>
 
         <nav className="p-4 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.path)
-                  ? "bg-blue-100 text-blue-600"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="text-lg">{item.icon}</span>
-              <span>{item.name}</span>
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(item.path)
+                    ? "bg-blue-100 text-blue-600"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="absolute bottom-4 left-4 right-4">

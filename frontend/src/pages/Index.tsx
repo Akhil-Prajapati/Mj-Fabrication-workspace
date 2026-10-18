@@ -1,6 +1,6 @@
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ServicesGrid from "@/components/home/ServicesGrid";
-import IndustrialCapabilities from "@/components/home/IndustrialCapabilities";
+import MachineryInfrastructure from "@/components/home/MachineryInfrastructure";
 import GlobalReach from "@/components/home/GlobalReach";
 import AboutSummary from "@/components/home/AboutSummary";
 import ProjectsGallery from "@/components/home/ProjectsGallery";
@@ -15,9 +15,9 @@ const Index = () => {
   const homeJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "MJ Fabrication - Industrial & Sheet Metal Fabrication Manufacturer & Exporter",
+    name: "MJ Fabrication - Fabrication & Customized Metal Manufacturing Solutions",
     description:
-      "Industrial and sheet metal fabrication manufacturer and exporter. Custom metal manufacturing from customer drawings using Jindal Steel material, supplying clients across European and Gulf markets. 15+ years experience. GST registered.",
+      "MJ Fabrication provides fabrication and customized metal manufacturing solutions tailored to customer requirements. Industrial fabrication, sheet metal fabrication, raw material supply, custom manufacturing, and timely delivery.",
     url: "https://mjfabrication.in/",
     mainEntity: {
       "@type": "LocalBusiness",
@@ -35,8 +35,6 @@ const Index = () => {
         latitude: "23.0821",
         longitude: "72.6307",
       },
-      // Only markets the business has confirmed. Europe and the Gulf are
-      // declared as regions rather than as countries we cannot substantiate.
       areaServed: [
         { "@type": "Place", name: "Europe" },
         { "@type": "Place", name: "Gulf and Middle East" },
@@ -52,7 +50,7 @@ const Index = () => {
       <Header />
       <HeroCarousel />
       <ServicesGrid />
-      <IndustrialCapabilities />
+      <MachineryInfrastructure />
       <GlobalReach />
       <AboutSummary />
       <ProjectsGallery />

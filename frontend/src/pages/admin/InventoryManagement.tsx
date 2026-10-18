@@ -11,7 +11,7 @@ import {
   updateInventoryItem,
   deleteInventoryItem,
 } from "@/api/inventory";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -185,8 +185,9 @@ const InventoryManagement = () => {
       {/* Low Stock Alerts */}
       {lowStockItems.length > 0 && !showForm && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-            ⚠️ Low Stock Alerts ({lowStockItems.length} items)
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            Low Stock Alerts ({lowStockItems.length} items)
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {lowStockItems.map((item) => (

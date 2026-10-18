@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -20,9 +20,15 @@ import Reports from "./pages/admin/Reports";
 import CompanyProfile from "./pages/admin/CompanyProfile";
 import AuthGuard from "@/components/auth/AuthGuard";
 import AdminLayout from "./components/admin/AdminLayout";
-import ChatWidget from "@/components/ChatWidget"; // Import ChatWidget component
+import ChatWidget from "@/components/ChatWidget";
 
 const queryClient = new QueryClient();
+
+const PublicChatWidget = () => {
+  const location = useLocation();
+  if (location.pathname.startsWith("/admin")) return null;
+  return <ChatWidget />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -60,8 +66,7 @@ const App = () => (
           <Route path="/gallery" element={<Gallery />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {/* Only show ChatWidget on non-admin routes */}
-        {window.location.pathname.startsWith("/admin") ? null : <ChatWidget />}
+        <PublicChatWidget />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

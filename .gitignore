@@ -39,6 +39,7 @@ yarn-error.log*
 # Build
 /dist/
 /build/
+*.zip
 
 # Frontend
 /frontend/node_modules/

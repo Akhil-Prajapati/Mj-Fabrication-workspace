@@ -1,75 +1,70 @@
 
-import { Card, CardContent } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { FileCode2, Layers, Cpu, Flame, ShieldCheck, Truck } from 'lucide-react';
+import { TracingBeam, HoverEffect } from "@/components/ui/aceternity";
 
 const ProcessSection = () => {
   const processes = [
     {
-      step: "01",
-      title: "Consultation",
-      description: "We discuss your requirements and provide expert advice on the best solutions",
-      icon: "💬"
+      title: "CAD & DFM Engineering Review",
+      description: "Detailed design-for-manufacturing analysis of customer 2D/3D CAD models, tolerance optimization, and nesting.",
+      icon: FileCode2,
+      badge: "Step 01",
     },
     {
-      step: "02", 
-      title: "Design & Planning",
-      description: "Our team creates detailed designs and plans according to your specifications",
-      icon: "📐"
+      title: "Prime Material Allocation",
+      description: "Direct sourcing of prime Jindal Steel plates, sections, and structural tubes with traceable heat-number mill test reports.",
+      icon: Layers,
+      badge: "Step 02",
     },
     {
-      step: "03",
-      title: "Fabrication",
-      description: "Using modern equipment and quality materials, we fabricate your products",
-      icon: "🔧"
+      title: "12kW CNC Laser & Press Brake",
+      description: "High-speed fiber laser profiling to ±0.05mm and 250-ton multi-axis hydraulic bending with dynamic crowning.",
+      icon: Cpu,
+      badge: "Step 03",
     },
     {
-      step: "04",
-      title: "Quality Check",
-      description: "Rigorous quality testing ensures every product meets our high standards",
-      icon: "✅"
+      title: "Certified Heavy Bay Welding",
+      description: "Qualified welders conducting robotic MIG, TIG, and submerged arc welding in our equipped heavy assembly bays.",
+      icon: Flame,
+      badge: "Step 04",
     },
     {
-      step: "05",
-      title: "Installation",
-      description: "Professional installation by our experienced team for perfect fitting",
-      icon: "🏗️"
+      title: "Multi-Stage NDT & Quality Gate",
+      description: "Dimensional vernier inspection, dye-penetrant testing, and surface coating DFT thickness verification.",
+      icon: ShieldCheck,
+      badge: "Step 05",
     },
     {
-      step: "06",
-      title: "Support",
-      description: "Ongoing support and maintenance to ensure long-lasting performance",
-      icon: "🛠️"
-    }
+      title: "Domestic & Export Dispatch",
+      description: "Protective crating, moisture-barrier wrapping, and containerized road/sea dispatch to domestic OEMs & export clients.",
+      icon: Truck,
+      badge: "Step 06",
+    },
   ];
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Our Process
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            From concept to completion, we follow a systematic approach to deliver excellence
-          </p>
-        </div>
+    <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
+      <TracingBeam className="px-6">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase mb-4">
+              Quality Engineered Workflow
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-4">
+              Our Industrial Execution Process
+            </h2>
+            <p className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto">
+              From technical drawing sign-off to containerized dispatch, every milestone adheres to rigorous manufacturing protocols.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {processes.map((process, index) => (
-            <Card key={index} className="relative bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardContent className="p-6">
-                <div className="text-4xl mb-4">{process.icon}</div>
-                <div className="absolute top-4 right-4 text-2xl font-bold text-blue-200">
-                  {process.step}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{process.title}</h3>
-                <p className="text-gray-600">{process.description}</p>
-              </CardContent>
-            </Card>
-          ))}
+          <HoverEffect items={processes} className="py-6" />
         </div>
-      </div>
+      </TracingBeam>
     </section>
   );
 };
 
 export default ProcessSection;
+

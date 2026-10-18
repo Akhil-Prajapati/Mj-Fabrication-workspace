@@ -1,52 +1,71 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Award, ShieldCheck, Factory, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { TextGenerateEffect } from "@/components/ui/aceternity/text-generate-effect";
+import { CardContainer, CardBody, CardItem } from "@/components/ui/aceternity/3d-card";
 
 const AboutSummary = () => {
   const stats = [
-    { number: "1000+", label: "Projects Completed" },
-    { number: "15+", label: "Years in Fabrication" },
-    { number: "500+", label: "Customers Served" },
-    { number: "100%", label: "GST Registered" },
+    { number: "20+", label: "Years Industrial Experience", sub: "Established in 2003" },
+    { number: "1,500+", label: "Projects Completed", sub: "OEM & Industrial Clients" },
+    { number: "100%", label: "Genuine Jindal Steel", sub: "Traceable Prime Material" },
+    { number: "Drawing-to-Part", label: "Custom Manufacturing", sub: "Strict Technical Compliance" },
   ];
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-20 bg-gradient-to-b from-white via-slate-50 to-white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            About MJ Fabrication - Industrial Fabrication Manufacturer &amp;
-            Exporter
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14"
+        >
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs sm:text-sm font-semibold mb-4 tracking-wide uppercase">
+            <Award className="w-4 h-4 text-blue-600" />
+            20+ Years of Manufacturing Excellence • Est. 2003
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">
+            Fabrication &amp; Customized Metal Solutions
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-4">
-            MJ Fabrication has delivered custom metal fabrication for over 15
-            years, producing fabricated brackets, door and window frames,
-            staircases, welded assemblies and industrial shade structures. We
-            manufacture to customer drawings and technical specifications
-            rather than to a fixed catalogue.
-          </p>
-          <p className="text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            We are a GST-registered manufacturer working in Jindal Steel
-            material, supplying fabricated components for projects across
-            European and Gulf markets. From single prototype parts to
-            repeat production runs, every order is made against the
-            specification supplied.
-          </p>
-        </div>
+          
+          <div className="max-w-4xl mx-auto mb-6">
+            <TextGenerateEffect
+              words="MJ Fabrication provides fabrication and customized metal manufacturing solutions tailored to customer requirements. We work with customer drawings, technical specifications, and project needs to deliver practical and reliable fabrication solutions."
+              className="text-lg md:text-xl text-slate-800 font-semibold leading-relaxed"
+              duration={0.4}
+            />
+          </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <p className="text-base text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            Operating from our equipped fabrication facility in Naroda, Ahmedabad, Gujarat, we support equipment manufacturers, OEMs, engineering firms, and industrial projects with precision workmanship, raw material supply, and dependable on-time delivery.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
-            <Card
-              key={index}
-              className="text-center bg-white shadow-lg hover:shadow-xl transition-shadow duration-300"
-            >
-              <CardContent className="p-6">
-                <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">
+            <CardContainer key={index} className="w-full">
+              <CardBody className="bg-white border border-slate-200/90 rounded-2xl shadow-sm hover:shadow-xl hover:border-blue-500/40 transition-all duration-300 p-6 w-full h-auto flex flex-col justify-center text-center">
+                <CardItem
+                  translateZ={30}
+                  className="w-full text-center text-3xl sm:text-4xl font-black text-blue-600 mb-2 tracking-tight"
+                >
                   {stat.number}
-                </div>
-                <p className="text-sm md:text-base text-gray-600">
+                </CardItem>
+                <CardItem
+                  translateZ={20}
+                  className="w-full text-center text-sm sm:text-base font-bold text-slate-800 mb-1"
+                >
                   {stat.label}
-                </p>
-              </CardContent>
-            </Card>
+                </CardItem>
+                <CardItem
+                  translateZ={15}
+                  className="w-full text-center text-xs text-slate-500 font-medium"
+                >
+                  {stat.sub}
+                </CardItem>
+              </CardBody>
+            </CardContainer>
           ))}
         </div>
       </div>
@@ -55,3 +74,4 @@ const AboutSummary = () => {
 };
 
 export default AboutSummary;
+

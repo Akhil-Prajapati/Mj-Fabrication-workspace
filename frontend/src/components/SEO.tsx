@@ -12,9 +12,9 @@ interface SEOProps {
 }
 
 const SEO = ({
-  title = "MJ Fabrication | Industrial & Sheet Metal Fabrication Manufacturer & Exporter to Europe and the Gulf",
-  description = "MJ Fabrication - industrial and sheet metal fabrication manufacturer and exporter. Custom metal manufacturing from your drawings and technical specifications, using Jindal Steel material. Supplying fabricated components to European and Gulf markets. 15+ years experience. GST registered.",
-  keywords = "MJ Fabrication, industrial fabrication manufacturer, sheet metal fabrication exporter, metal fabrication exporter Europe, fabrication supplier Europe, metal fabrication Gulf Middle East, custom metal manufacturing, contract manufacturing fabrication, welded assemblies manufacturer, fabricated metal components exporter, Jindal Steel fabrication, build to drawing fabrication, metal enclosures and brackets manufacturer",
+  title = "MJ Fabrication | Custom Metal Manufacturing & Industrial Fabrication Solutions",
+  description = "MJ Fabrication provides fabrication and customized metal manufacturing solutions tailored to customer requirements. We work with customer drawings, technical specifications, and project needs to deliver practical and reliable fabrication solutions.",
+  keywords = "MJ Fabrication, industrial fabrication, customized metal manufacturing, sheet metal fabrication, raw material supply Jindal Steel, custom manufacturing, build to drawing fabrication, metal enclosures and brackets",
   ogTitle,
   ogDescription,
   ogImage = "https://mjfabrication.in/img/mj-fabrication-og-image.jpg",

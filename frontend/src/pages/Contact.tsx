@@ -11,19 +11,19 @@ const Contact = () => {
   const contactJsonLd = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    name: "Contact MJ Fabrication",
+    name: "Contact MJ Fabrication - Custom Metal Manufacturing & Fabrication",
     description:
-      "Contact MJ Fabrication for MS fabrication work in Naroda, Ahmedabad, Gujarat. Free consultation and quotes for doors, windows, shades, and custom fabrication.",
+      "Contact MJ Fabrication for industrial fabrication, customized sheet metal, raw material supply, and custom manufacturing from customer drawings in Naroda, Ahmedabad, Gujarat.",
     url: "https://mjfabrication.in/contact",
     mainEntity: {
       "@type": "LocalBusiness",
       name: "MJ Fabrication",
-      telephone: "+91-XXXXXXXXXX",
-      email: "info@mjfabrication.in",
+      telephone: "+91-9712929748",
+      email: "mjfabworld62@gmail.com",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Nava Naroda",
-        addressLocality: "Naroda",
+        streetAddress: "31, Maheshwari Park Society, Amarpark RCC Rd, Nava Naroda",
+        addressLocality: "Naroda, Ahmedabad",
         addressRegion: "Gujarat",
         postalCode: "382330",
         addressCountry: "IN",
@@ -34,9 +34,9 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-white">
       <SEO
-        title="Contact MJ Fabrication Naroda Ahmedabad | MS Fabrication Work Gujarat | Free Quote"
-        description="Contact MJ Fabrication for professional MS fabrication work in Naroda, Ahmedabad, Gujarat. Free consultation, instant quotes for doors, windows, shades. Located in Nava Naroda. Call now!"
-        keywords="contact MJ Fabrication, MS fabrication quote Ahmedabad, fabrication work consultation Naroda, metal fabrication contact Gujarat, door window quote Nikol, shade installation contact Ahmedabad"
+        title="Contact Us | Technical RFQ & Drawing Submission | MJ Fabrication"
+        description="Contact MJ Fabrication for industrial fabrication, custom sheet metal manufacturing, raw material supply, and CNC laser cutting in Naroda, Ahmedabad, Gujarat. Submit your technical drawings for rapid RFQ."
+        keywords="contact MJ Fabrication, metal fabrication RFQ Ahmedabad, industrial fabrication Gujarat, sheet metal enclosure manufacturer, raw material supply Jindal Steel, custom manufacturing drawings"
         canonicalUrl="https://mjfabrication.in/contact"
         jsonLd={contactJsonLd}
       />

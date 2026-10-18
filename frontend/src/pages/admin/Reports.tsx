@@ -37,6 +37,8 @@ import {
   DollarSign,
   Users,
   Package,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { fetchDashboardStats, downloadGSTR1 } from "@/api/reports";
@@ -220,10 +222,10 @@ const Reports = () => {
                       <Package className="h-8 w-8 text-orange-600" />
                     )}
                     {stat.icon === "Check" && (
-                      <span className="h-8 w-8 text-green-600">✔️</span>
+                      <Check className="h-8 w-8 text-green-600" />
                     )}
                     {stat.icon === "AlertTriangle" && (
-                      <span className="h-8 w-8 text-red-600">⚠️</span>
+                      <AlertTriangle className="h-8 w-8 text-red-600" />
                     )}
                   </div>
                 </CardContent>

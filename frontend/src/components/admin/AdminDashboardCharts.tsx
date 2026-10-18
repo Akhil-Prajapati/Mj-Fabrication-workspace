@@ -13,6 +13,7 @@ import {
   Cell,
 } from "recharts";
 import { fetcher } from "@/api/fetcher";
+import { TrendingUp, BarChart3 } from "lucide-react";
 
 const AdminDashboardCharts = ({
   month,
@@ -98,7 +99,8 @@ const AdminDashboardCharts = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            📈 Revenue Trend
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            Revenue Trend
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -133,7 +135,8 @@ const AdminDashboardCharts = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            📊 GST Collection Breakdown
+            <BarChart3 className="w-5 h-5 text-indigo-600" />
+            GST Collection Breakdown
           </CardTitle>
         </CardHeader>
         <CardContent>
