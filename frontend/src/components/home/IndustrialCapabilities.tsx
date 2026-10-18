@@ -63,13 +63,16 @@ const IndustrialCapabilities = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Flex rather than grid: there are five cards against a three-column
+            layout, and a grid would strand the last two against the left edge
+            with a gap on the right. Wrapping flex centres the final row. */}
+        <div className="flex flex-wrap justify-center gap-8">
           {capabilities.map((capability) => {
             const Icon = capability.icon;
             return (
               <Card
                 key={capability.title}
-                className="hover:shadow-xl transition-shadow duration-300 overflow-hidden bg-white"
+                className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.334rem)] hover:shadow-xl transition-shadow duration-300 overflow-hidden bg-white"
               >
                 <img
                   src={capability.image}

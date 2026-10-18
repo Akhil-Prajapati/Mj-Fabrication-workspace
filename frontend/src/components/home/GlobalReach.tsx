@@ -50,11 +50,14 @@ const GlobalReach = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        {/* Column count tracks the number of markets, so the row stays full
+            width instead of leaving an empty cell when one is added or
+            removed. */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           {markets.map((market) => (
             <div
               key={market.name}
-              className="rounded-xl bg-white/10 border border-white/15 px-5 py-4 text-center"
+              className="rounded-xl bg-white/10 border border-white/15 px-5 py-5 text-center"
             >
               <div className="text-lg font-semibold">{market.name}</div>
               <div className="text-sm text-blue-200 mt-1">{market.note}</div>
@@ -62,11 +65,14 @@ const GlobalReach = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {strengths.map((strength) => {
             const Icon = strength.icon;
             return (
-              <div key={strength.title} className="flex gap-4">
+              <div
+                key={strength.title}
+                className="flex gap-4 rounded-xl bg-white/5 border border-white/10 p-5"
+              >
                 <span className="w-11 h-11 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
