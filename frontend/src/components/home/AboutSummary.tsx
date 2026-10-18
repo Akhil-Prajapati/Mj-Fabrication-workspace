@@ -5,7 +5,7 @@ const AboutSummary = () => {
     { number: "1000+", label: "Projects Completed in Ahmedabad" },
     { number: "15+", label: "Years Serving Gujarat" },
     { number: "500+", label: "Happy Customers in Naroda-Nikol" },
-    { number: "100%", label: "GST Registered & Certified" },
+    { number: "100%", label: "GST Registered" },
   ];
 
   return (
@@ -25,9 +25,11 @@ const AboutSummary = () => {
           </p>
           <p className="text-lg text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Serving Naroda, Nikol, Vastral, Odhav, and entire Ahmedabad with
-            GST-registered, ISO-certified fabrication solutions. From
-            residential projects to large industrial installations, we deliver
-            excellence in every MS fabrication work across Gujarat.
+            GST-registered fabrication solutions built from Jindal Steel
+            material. From residential projects to large industrial
+            installations, we deliver excellence in every MS fabrication work
+            across Gujarat — and export fabricated components to clients in
+            Poland, Europe, and the Gulf.
           </p>
         </div>
 

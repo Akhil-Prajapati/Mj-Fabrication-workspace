@@ -1,6 +1,7 @@
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ServicesGrid from "@/components/home/ServicesGrid";
 import IndustrialCapabilities from "@/components/home/IndustrialCapabilities";
+import GlobalReach from "@/components/home/GlobalReach";
 import AboutSummary from "@/components/home/AboutSummary";
 import ProjectsGallery from "@/components/home/ProjectsGallery";
 import ProcessSection from "@/components/home/ProcessSection";
@@ -14,9 +15,9 @@ const Index = () => {
   const homeJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "MJ Fabrication - MS Fabrication Work Naroda Ahmedabad Gujarat",
+    name: "MJ Fabrication - Industrial & Sheet Metal Fabrication Exporter, Naroda Ahmedabad Gujarat",
     description:
-      "Leading MS fabrication company in Naroda, Ahmedabad, Gujarat. Expert in doors, windows, shades, railings, staircases. 15+ years experience. GST registered.",
+      "Industrial and sheet metal fabrication manufacturer and exporter in Naroda, Ahmedabad, Gujarat, India. Custom metal manufacturing from customer drawings using Jindal Steel material, supplying clients in India, Poland, Europe and the Gulf. 15+ years experience. GST registered.",
     url: "https://mjfabrication.in/",
     mainEntity: {
       "@type": "LocalBusiness",
@@ -34,6 +35,15 @@ const Index = () => {
         latitude: "23.0821",
         longitude: "72.6307",
       },
+      // Only markets the business has confirmed. Europe and the Gulf are
+      // declared as regions rather than as countries we cannot substantiate.
+      areaServed: [
+        { "@type": "Country", name: "India" },
+        { "@type": "Country", name: "Poland" },
+        { "@type": "Place", name: "Europe" },
+        { "@type": "Place", name: "Gulf and Middle East" },
+      ],
+      knowsLanguage: ["en", "hi", "gu"],
     },
   };
 
@@ -44,6 +54,7 @@ const Index = () => {
       <HeroCarousel />
       <ServicesGrid />
       <IndustrialCapabilities />
+      <GlobalReach />
       <AboutSummary />
       <ProjectsGallery />
       <ProcessSection />

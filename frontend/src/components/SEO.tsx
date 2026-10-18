@@ -12,9 +12,9 @@ interface SEOProps {
 }
 
 const SEO = ({
-  title = "MJ Fabrication Ahmedabad | MS Fabrication Work Naroda Nikol | Door Window Shade Manufacturing Gujarat",
-  description = "MJ Fabrication - Leading MS fabrication company in Naroda, Ahmedabad, Gujarat. Expert in doors, windows, shades, railings, staircases. 15+ years experience. GST registered. Call for custom fabrication work in Nikol, Naroda area.",
-  keywords = "MJ Fabrication, MS fabrication Ahmedabad, fabrication work Naroda, metal fabrication Nikol, door frame manufacturing Gujarat, window fabrication Ahmedabad, shade structure Naroda, staircase fabrication, railing work, custom fabrication Ahmedabad, MS work Gujarat, welding services Naroda, metal door Nikol",
+  title = "MJ Fabrication Ahmedabad | Industrial & Sheet Metal Fabrication Exporter to Poland, Europe & Gulf | Naroda Gujarat India",
+  description = "MJ Fabrication - industrial and sheet metal fabrication manufacturer and exporter in Naroda, Ahmedabad, Gujarat, India. Custom metal manufacturing from your drawings using Jindal Steel material. Supplying clients in Poland, Europe and the Gulf. 15+ years experience. GST registered.",
+  keywords = "MJ Fabrication, industrial fabrication India, sheet metal fabrication exporter, metal fabrication Poland, fabrication supplier Europe, metal fabrication Gulf Middle East, custom metal manufacturing India, Indian fabrication exporter, contract manufacturing India, welded assemblies supplier, Jindal Steel fabrication, MS fabrication Ahmedabad, fabrication work Naroda, metal fabrication Nikol, custom fabrication Ahmedabad",
   ogTitle,
   ogDescription,
   ogImage = "https://mjfabrication.in/img/mj-fabrication-og-image.jpg",

@@ -135,8 +135,8 @@ const Services = () => {
             with 15+ years experience.
           </p>
           <p className="text-lg text-blue-100 max-w-3xl mx-auto">
-            GST Registered | ISO Certified | Serving Gujarat with Quality MS
-            Fabrication Solutions
+            GST Registered | Jindal Steel Material | Serving Gujarat and
+            Exporting to Poland, Europe &amp; the Gulf
           </p>
         </div>
       </section>
